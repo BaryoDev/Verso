@@ -51,41 +51,27 @@ test.describe('Verso User Journey', () => {
         console.log('Detected Non-Empty State (Create New Story is visible)');
     }
 
-    await page.waitForSelector('text=Open Project Folder', { timeout: 5000 });
-    await page.click('text=Open Project Folder');
+    await page.waitForSelector('text=Open Folder', { timeout: 5000 });
+    await page.click('text=Open Folder');
     
     // 3. Verify Editor Loaded
     // With our mock, it should load 'RealFile.md' or at least the project path
     await expect(page.getByText('/User/test/Project')).toBeVisible();
     
-    // Sidebar should show "RealFile.md"
-    await expect(page.getByText('RealFile.md')).toBeVisible();
+    // Sidebar should show "RealFile" (extension stripped)
+    await expect(page.getByText('RealFile')).toBeVisible();
     
-    // 4. Verify Editor Content (Code Default)
-    // Should see Monaco first
-    await expect(page.getByTestId('monaco-wrapper')).toBeVisible();
+    // 4. Verify Editor Content (WYSIWYG Default)
+    // Should see WYSIWYG first
+    await expect(page.locator('.wysiwyg-container')).toBeVisible();
 
-    // Toggle to WYSIWYG
-    await page.click('text=WYSIWYG'); // Button text shows "Source" when in WYSIWYG, "WYSIWYG" when in Source? 
-    // Logic: {editorMode === 'wysiwyg' ? 'Source' : 'WYSIWYG'}
-    // If mode is 'code', text should be 'WYSIWYG' (to switch TO it)
-    
-    console.log('Waiting for WYSIWYG container...');
-    try {
-      await page.waitForSelector('.wysiwyg-container', { timeout: 5000 });
-    } catch (e) {
-      console.log('WYSIWYG Wait Failed. Dumping Content:');
-      console.log(await page.content());
-      throw e;
-    }
-    
     // Toggle to Source Code
-    await page.click('text=Source');
+    await page.click('text=Source'); 
     await expect(page.getByTestId('monaco-wrapper')).toBeVisible();
 
     // Toggle back to WYSIWYG
     await page.click('text=WYSIWYG');
-    await page.waitForSelector('.wysiwyg-container');
+    await expect(page.locator('.wysiwyg-container')).toBeVisible();
 
     // 5. Toggle Git View
     // Need to click the Activity Bar icon. We don't have IDs there yet, so we use text or icon class/aria-label?

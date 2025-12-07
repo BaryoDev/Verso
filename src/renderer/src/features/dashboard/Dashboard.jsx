@@ -1,8 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useTheme } from '../theme/ThemeContext';
-import { FileText, Plus, Settings } from 'lucide-react';
+import { FileText, Plus, Settings, BookOpen, Feather, Film } from 'lucide-react';
+import { NewProjectModal } from './NewProjectModal';
 
-const ProjectCard = ({ title, meta, isActive }) => {
+const ProjectCard = ({ title, meta, isActive, type }) => {
+    let Icon = FileText;
+    if (type === 'novel') Icon = BookOpen;
+    if (type === 'poem') Icon = Feather;
+    if (type === 'screenplay') Icon = Film;
+
     return (
         <div
             className={`project-card ${isActive ? 'active' : ''}`}
@@ -20,7 +26,10 @@ const ProjectCard = ({ title, meta, isActive }) => {
             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--hover-bg)'}
             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-primary)'}
         >
-            <h3 style={{ margin: 0, fontFamily: 'var(--font-serif)', color: 'var(--text-primary)' }}>{title}</h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <h3 style={{ margin: 0, fontFamily: 'var(--font-serif)', color: 'var(--text-primary)' }}>{title}</h3>
+                <Icon size={18} color="var(--accent-gold)" style={{ opacity: 0.7 }} />
+            </div>
             <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{meta}</span>
         </div>
     );
@@ -48,11 +57,24 @@ const NewProjectCard = ({ onClick }) => {
     );
 };
 
-export const Dashboard = ({ onOpenProject, recentProjects = [] }) => {
+export const Dashboard = ({ onOpenProject, recentProjects = [], onCreateProject }) => {
     const { theme, setTheme } = useTheme();
+    const [isModalOpen, setIsModalOpen] = useState(false);
+
+    const handleCreateProject = async (name, type) => {
+        if (onCreateProject) {
+            await onCreateProject(name, type);
+        }
+    };
 
     return (
         <div style={{ padding: '60px', height: '100%', overflowY: 'auto' }}>
+            <NewProjectModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                onCreate={handleCreateProject}
+            />
+
             <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
                 <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: '36px', color: 'var(--text-primary)', margin: 0 }}>
                     Good afternoon, Author.
@@ -86,23 +108,42 @@ export const Dashboard = ({ onOpenProject, recentProjects = [] }) => {
                     <h2 style={{ fontFamily: 'var(--font-serif)', marginTop: 0 }}>No Recent Projects</h2>
                     <p style={{ marginBottom: '30px' }}>Open a folder to start writing your masterpiece.</p>
 
-                    <button
-                        onClick={() => onOpenProject && onOpenProject('existing')}
-                        style={{
-                            padding: '12px 24px',
-                            fontSize: '16px',
-                            backgroundColor: 'var(--accent-gold)',
-                            color: '#fff',
-                            border: 'none',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px'
-                        }}
-                    >
-                        Open Project Folder
-                    </button>
+                    <div style={{ display: 'flex', gap: '15px' }}>
+                        <button
+                            onClick={() => setIsModalOpen(true)}
+                            style={{
+                                padding: '12px 24px',
+                                fontSize: '16px',
+                                backgroundColor: 'var(--accent-gold)',
+                                color: '#fff',
+                                border: 'none',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px'
+                            }}
+                        >
+                            <Plus size={16} /> Create New
+                        </button>
+                        <button
+                            onClick={() => onOpenProject && onOpenProject('existing')}
+                            style={{
+                                padding: '12px 24px',
+                                fontSize: '16px',
+                                background: 'transparent',
+                                color: 'var(--text-primary)',
+                                border: '1px solid var(--border-color)',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px'
+                            }}
+                        >
+                            Open Folder
+                        </button>
+                    </div>
                 </div>
             ) : (
                 <div style={{
@@ -110,12 +151,13 @@ export const Dashboard = ({ onOpenProject, recentProjects = [] }) => {
                     gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
                     gap: '30px'
                 }}>
-                    <NewProjectCard onClick={() => onOpenProject && onOpenProject('new')} />
+                    <NewProjectCard onClick={() => setIsModalOpen(true)} />
 
                     {recentProjects.map((project) => (
                         <div key={project.path} onClick={() => onOpenProject && onOpenProject(project.path)}>
                             <ProjectCard
                                 title={project.name}
+                                type={project.type} // Assuming recents store type now/later
                                 meta={`Last opened ${new Date(project.lastOpened).toLocaleDateString()}`}
                             />
                         </div>

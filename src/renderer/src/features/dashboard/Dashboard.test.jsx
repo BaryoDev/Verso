@@ -1,10 +1,11 @@
+
 /**
  * @vitest-environment jsdom
  */
 import React from 'react';
 import { render, screen, cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import '@testing-library/jest-dom/vitest';
+
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { Dashboard } from './Dashboard';
 import { ThemeProvider } from '../theme/ThemeContext';
@@ -18,6 +19,11 @@ const renderDashboard = (props = {}) => {
     );
 };
 
+const MOCK_PROJECTS = [
+    { name: 'Death of Decency', path: '/p1', lastOpened: new Date().toISOString(), type: 'novel' },
+    { name: 'The Glass Clock', path: '/p2', lastOpened: new Date().toISOString(), type: 'novel' }
+];
+
 describe('Dashboard', () => {
     afterEach(() => {
         cleanup();
@@ -29,19 +35,29 @@ describe('Dashboard', () => {
     });
 
     it('renders project list', () => {
-        renderDashboard();
+        renderDashboard({ recentProjects: MOCK_PROJECTS });
         expect(screen.getByText('Death of Decency')).toBeInTheDocument();
         expect(screen.getByText('The Glass Clock')).toBeInTheDocument();
     });
 
-    it('calls onOpenProject when clicking new project', async () => {
+    it('calls onCreateProject when clicking new project and submitting', async () => {
         const user = userEvent.setup();
-        const handleOpen = vi.fn();
-        renderDashboard({ onOpenProject: handleOpen });
+        const handleCreate = vi.fn();
+        renderDashboard({ onCreateProject: handleCreate });
 
-        const createBtn = screen.getByText(/Create New Story/i);
+        // 1. Open Modal
+        const createBtn = screen.getByText(/Create New/i, { selector: 'button' });
         await user.click(createBtn);
+        expect(screen.getByText('Create New Story')).toBeVisible();
 
-        expect(handleOpen).toHaveBeenCalledWith('new');
+        // 2. Type Name
+        const input = screen.getByPlaceholderText(/e.g. The Great Adventure/i);
+        await user.type(input, 'My Story');
+
+        // 3. Submit
+        const submitBtn = screen.getByText('Create Project');
+        await user.click(submitBtn);
+
+        expect(handleCreate).toHaveBeenCalledWith('My Story', 'novel');
     });
 });

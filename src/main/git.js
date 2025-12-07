@@ -16,6 +16,10 @@ export function setupGitIPC() {
       if (!status) return null;
       return JSON.parse(JSON.stringify(status));
     } catch (error) {
+      // Suppress logging for non-git repositories to avoid console spam
+      if (typeof error.message === 'string' && error.message.includes('not a git repository')) {
+        return null; 
+      }
       console.error('git:status error:', error);
       return null;
     }
@@ -61,6 +65,18 @@ export function setupGitIPC() {
           return diff;
       } catch (e) {
           console.error('git:diff error', e);
+          return null;
+      }
+  });
+
+  // Get File Content at Revision (e.g. HEAD)
+  ipcMain.handle('git:getFileAtRevision', async (_, projectPath, filePath, revision = 'HEAD') => {
+      try {
+          const git = simpleGit(projectPath);
+          const content = await git.show([`${revision}:${filePath}`]);
+          return content;
+      } catch (e) {
+          console.error('git:getFileAtRevision error', e);
           return null;
       }
   });

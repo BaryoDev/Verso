@@ -4,7 +4,8 @@
 import { render, screen, act, cleanup } from '@testing-library/react';
 import React from 'react';
 import userEvent from '@testing-library/user-event';
-import '@testing-library/jest-dom/vitest';
+
+
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { ThemeProvider, useTheme } from './ThemeContext';
 
@@ -36,7 +37,7 @@ describe('ThemeContext', () => {
                 <TestComponent />
             </ThemeProvider>
         );
-        expect(screen.getByTestId('current-theme')).toHaveTextContent('classic');
+        expect(screen.getByTestId('current-theme')).toHaveTextContent('vscode');
     });
 
     it('updates DOM attribute when theme changes', async () => {

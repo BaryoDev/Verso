@@ -74,4 +74,58 @@ export function setupIPC() {
     await fs.writeFile(filePath, content, 'utf-8');
     return true;
   });
+
+  // Create Project
+  ipcMain.handle('fs:createProject', async (_, { parentPath, projectName, type, author }) => {
+    try {
+      const projectPath = path.join(parentPath, projectName);
+      
+      // 1. Create Project Root
+      await fs.mkdir(projectPath, { recursive: true });
+
+      // 2. Create verso.config.json
+      const config = {
+        name: projectName,
+        type: type, // 'novel', 'poem', 'screenplay', 'general'
+        created: new Date().toISOString(),
+        author: author || 'Unknown',
+        version: '1.0.0'
+      };
+      await fs.writeFile(
+        path.join(projectPath, 'verso.config.json'), 
+        JSON.stringify(config, null, 2), 
+        'utf-8'
+      );
+
+      // 3. Scaffold Folders based on Type
+      const folders = [];
+      if (type === 'novel') {
+        folders.push('Chapters', 'Characters', 'Notes', 'Research');
+      } else if (type === 'screenplay') {
+        folders.push('Scenes', 'Characters', 'Notes');
+      } else if (type === 'poem') {
+        folders.push('Drafts', 'Published');
+      } else {
+        folders.push('Docs');
+      }
+
+      for (const folder of folders) {
+        await fs.mkdir(path.join(projectPath, folder), { recursive: true });
+      }
+
+      // 4. Create initial file (optional)
+      if (type === 'novel') {
+        await fs.writeFile(
+          path.join(projectPath, 'Chapters', 'Chapter 1.md'),
+          '# Chapter 1\n\nIt was a dark and stormy night...',
+          'utf-8'
+        );
+      }
+
+      return projectPath;
+    } catch (error) {
+      console.error('fs:createProject error:', error);
+      throw error;
+    }
+  });
 }

@@ -1,14 +1,15 @@
 import React from 'react';
 import { Files, Search, Settings, PenTool, Layout, GitBranch } from 'lucide-react';
 
-const ActivityIcon = ({ icon: Icon, isActive, onClick, label }) => (
+const ActivityIcon = ({ icon: Icon, isActive, onClick, label, badge }) => (
     <div
         onClick={onClick}
         title={label}
         style={{
             width: '50px',
             height: '50px',
-            display: 'flex',
+            display: 'flex', // Revert to relative? No, relative container needed for badge
+            position: 'relative', // Added for badge positioning
             alignItems: 'center',
             justifyContent: 'center',
             cursor: 'pointer',
@@ -19,10 +20,31 @@ const ActivityIcon = ({ icon: Icon, isActive, onClick, label }) => (
         }}
     >
         <Icon size={24} strokeWidth={1.5} />
+        {badge > 0 && (
+            <div style={{
+                position: 'absolute',
+                top: '8px',
+                right: '8px',
+                backgroundColor: 'var(--accent-gold)',
+                color: '#fff',
+                fontSize: '9px',
+                fontWeight: 'bold',
+                minWidth: '14px',
+                height: '14px',
+                borderRadius: '7px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '0 3px',
+                border: '1px solid var(--bg-activity)'
+            }}>
+                {badge}
+            </div>
+        )}
     </div>
 );
 
-export const ActivityBar = ({ activeView, onViewChange }) => {
+export const ActivityBar = ({ activeView, onViewChange, gitBadge }) => {
     return (
         <div style={{
             width: '50px',
@@ -49,6 +71,7 @@ export const ActivityBar = ({ activeView, onViewChange }) => {
                 label="Source Control"
                 isActive={activeView === 'git'}
                 onClick={() => onViewChange('git')}
+                badge={gitBadge}
             />
             <ActivityIcon
                 icon={Layout}

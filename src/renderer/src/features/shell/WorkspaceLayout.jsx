@@ -9,13 +9,21 @@ export const WorkspaceLayout = ({
     statusBarLeft,
     statusBarRight,
     activeView = 'explorer',
-    onViewChange
+    onViewChange,
+    gitBadge = 0
 }) => {
-    // If onViewChange is not provided, we could simple default to internal state, but let's assume controlled for now.
+    // Internal state for uncontrolled mode
+    const [internalView, setInternalView] = useState(activeView);
+    const currentView = onViewChange ? activeView : internalView;
 
     // Logic to toggle sidebar if clicking same view
     const handleViewClick = (view) => {
-        if (onViewChange) onViewChange(view);
+        const nextView = currentView === view ? null : view;
+        if (onViewChange) {
+            onViewChange(nextView);
+        } else {
+            setInternalView(nextView);
+        }
     };
 
     return (
@@ -29,11 +37,12 @@ export const WorkspaceLayout = ({
             {/* Main Row: Activity + Sidebar + Editor */}
             <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
                 <ActivityBar
-                    activeView={activeView}
+                    activeView={currentView}
                     onViewChange={handleViewClick}
+                    gitBadge={gitBadge}
                 />
 
-                <Sidebar activeView={activeView} isVisible={true}>
+                <Sidebar activeView={currentView} isVisible={!!currentView}>
                     {sidebarContent}
                 </Sidebar>
 

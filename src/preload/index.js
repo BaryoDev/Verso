@@ -7,7 +7,8 @@ const api = {
     openDirectory: () => ipcRenderer.invoke('dialog:openDirectory'),
     readDir: (path) => ipcRenderer.invoke('fs:readDir', path),
     readFile: (path) => ipcRenderer.invoke('fs:readFile', path),
-    saveFile: (path, content) => ipcRenderer.invoke('fs:writeFile', path, content)
+    saveFile: (path, content) => ipcRenderer.invoke('fs:writeFile', path, content),
+    createProject: (details) => ipcRenderer.invoke('fs:createProject', details)
   },
   git: {
       status: (path) => ipcRenderer.invoke('git:status', path),
@@ -18,7 +19,8 @@ const api = {
       log: (path) => ipcRenderer.invoke('git:log', path),
       init: (path) => ipcRenderer.invoke('git:init', path),
       diff: (path, file) => ipcRenderer.invoke('git:diff', path, file),
-      restore: (path, file) => ipcRenderer.invoke('git:restore', path, file)
+      restore: (path, file) => ipcRenderer.invoke('git:restore', path, file),
+      getFileAtRevision: (path, file, revision) => ipcRenderer.invoke('git:getFileAtRevision', path, file, revision)
   }
 }
 

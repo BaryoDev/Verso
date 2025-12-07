@@ -15,7 +15,9 @@
     "build:unpack": "npm run build && electron-builder --dir",
     "build:win": "npm run build && electron-builder --win",
     "build:mac": "npm run build && electron-builder --mac",
-    "build:linux": "npm run build && electron-builder --linux"
+    "build:linux": "npm run build && electron-builder --linux",
+    "test": "vitest",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.2",
@@ -23,8 +25,10 @@
     "@monaco-editor/react": "^4.7.0",
     "@tiptap/extension-bubble-menu": "^3.13.0",
     "@tiptap/extension-floating-menu": "^3.13.0",
+    "@tiptap/extension-focus": "^3.13.0",
     "@tiptap/react": "^3.13.0",
     "@tiptap/starter-kit": "^3.13.0",
+    "diff": "^8.0.2",
     "lucide-react": "^0.556.0",
     "monaco-editor": "^0.55.1",
     "simple-git": "^3.30.0",

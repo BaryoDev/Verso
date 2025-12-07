@@ -235,3 +235,14 @@
     color: #4daafc;
     /* VS Code Blue */
 }
+
+/* Focus Mode */
+.focus-mode .ProseMirror>* {
+    opacity: 0.25;
+    transition: opacity 0.5s ease;
+}
+
+.focus-mode .ProseMirror>.has-focus,
+.focus-mode .ProseMirror>*:hover {
+    opacity: 1;
+}
