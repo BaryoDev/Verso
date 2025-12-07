@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { ChevronRight, ChevronDown, File, Folder } from 'lucide-react';
+import { ChevronRight, ChevronDown, File, Folder, FolderOpen } from 'lucide-react';
 
-const FileItem = ({ item, level, onSelect }) => {
+const FileItem = ({ item, level, onSelect, activeId }) => {
     const [isOpen, setIsOpen] = useState(true);
+    const isActive = item.id === activeId;
 
     const handleClick = () => {
         if (item.type === 'folder') {
@@ -25,13 +26,19 @@ const FileItem = ({ item, level, onSelect }) => {
                     alignItems: 'center',
                     gap: '6px',
                     cursor: 'pointer',
-                    color: 'var(--text-primary)',
+                    color: isActive ? 'var(--accent-gold)' : 'var(--text-primary)',
+                    fontWeight: isActive ? 500 : 400,
                     fontSize: '13px',
                     userSelect: 'none',
-                    backgroundColor: 'transparent' // Hover effect handled by CSS ideally, or state
+                    backgroundColor: isActive ? 'var(--bg-secondary)' : 'transparent',
+                    borderLeft: isActive ? '2px solid var(--accent-gold)' : '2px solid transparent'
                 }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.05)'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                onMouseEnter={(e) => {
+                    if (!isActive) e.currentTarget.style.backgroundColor = 'var(--hover-bg)';
+                }}
+                onMouseLeave={(e) => {
+                    if (!isActive) e.currentTarget.style.backgroundColor = 'transparent';
+                }}
             >
                 {item.type === 'folder' && (
                     <span style={{ color: 'var(--text-secondary)' }}>
@@ -41,20 +48,30 @@ const FileItem = ({ item, level, onSelect }) => {
 
                 {/* Simple icons for now */}
                 {item.type === 'folder' ? (
-                    <Folder size={14} color="var(--accent-gold)" fill="var(--accent-gold)" fillOpacity={0.2} />
+                    isOpen ? (
+                        <FolderOpen size={14} color="var(--text-secondary)" fill="currentColor" fillOpacity={0.1} />
+                    ) : (
+                        <Folder size={14} color="var(--text-secondary)" fill="currentColor" fillOpacity={0.1} />
+                    )
                 ) : (
-                    <File size={14} color="var(--text-secondary)" />
+                    <File size={14} color={isActive ? 'var(--accent-gold)' : 'var(--text-secondary)'} />
                 )}
 
                 <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {item.name}
+                    {item.name.replace(/\.md$/, '')}
                 </span>
             </div>
 
             {item.type === 'folder' && isOpen && item.children && (
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                     {item.children.map((child) => (
-                        <FileItem key={child.id} item={child} level={level + 1} onSelect={onSelect} />
+                        <FileItem
+                            key={child.id}
+                            item={child}
+                            level={level + 1}
+                            onSelect={onSelect}
+                            activeId={activeId}
+                        />
                     ))}
                 </div>
             )}
@@ -62,11 +79,17 @@ const FileItem = ({ item, level, onSelect }) => {
     );
 };
 
-export const FileTree = ({ data, onFileSelect }) => {
+export const FileTree = ({ data, onFileSelect, activeId }) => {
     return (
         <div style={{ paddingTop: '10px' }}>
             {data.map((item) => (
-                <FileItem key={item.id} item={item} level={0} onSelect={onFileSelect} />
+                <FileItem
+                    key={item.id}
+                    item={item}
+                    level={0}
+                    onSelect={onFileSelect}
+                    activeId={activeId}
+                />
             ))}
         </div>
     );

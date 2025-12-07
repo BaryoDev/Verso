@@ -105,7 +105,26 @@ function App() {
     const api = getFileApi();
     if (!api) return;
     const tree = await api.readDir(rootPath);
-    setFileSystem(tree);
+
+    // Recursive filter for .md files and Folders
+    const filterTree = (nodes) => {
+      return nodes
+        .filter(node => {
+          if (node.type === 'folder') return true;
+          return node.name.endsWith('.md');
+        })
+        .map(node => {
+          const newItem = { ...node };
+          if (newItem.children) {
+            newItem.children = filterTree(newItem.children);
+            // If folder is empty after filter, should we keep it? Yes, for now.
+          }
+          return newItem;
+        });
+    };
+
+    const filtered = filterTree(tree);
+    setFileSystem(filtered);
   };
 
   // 3. Select & Read File
@@ -156,7 +175,11 @@ function App() {
                 {currentProject}
               </div>
             </div>
-            <FileTree data={fileSystem} onFileSelect={handleFileSelect} />
+            <FileTree
+              data={fileSystem}
+              onFileSelect={handleFileSelect}
+              activeId={activeFile?.id}
+            />
           </>
         )
       }
