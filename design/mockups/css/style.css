@@ -1,0 +1,238 @@
+:root {
+    /* Classic Library Theme */
+    --bg-primary: #F5F5DC;
+    /* Old Paper */
+    --bg-secondary: #EBEBD0;
+    /* Slightly darker paper for sidebars */
+    --text-primary: #333333;
+    /* Dark Graphite */
+    --text-secondary: #5A4A42;
+    /* Faded Ink */
+
+    --accent-gold: #D4AF37;
+    /* Gold Leaf */
+    --accent-leather: #4A3B32;
+    /* Deep Leather */
+
+    --font-serif: 'Georgia', 'Merriweather', serif;
+    --font-sans: 'Inter', '-apple-system', sans-serif;
+
+    --shadow-soft: 0 4px 20px rgba(74, 59, 50, 0.1);
+    --shadow-deep: 0 8px 30px rgba(74, 59, 50, 0.25);
+
+    --spacing-unit: 8px;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: var(--font-sans);
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+}
+
+/* Typography Utilities */
+.serif {
+    font-family: var(--font-serif);
+}
+
+.text-gold {
+    color: var(--accent-gold);
+}
+
+.text-leather {
+    color: var(--accent-leather);
+}
+
+/* Layout Containers */
+.app-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: row;
+}
+
+/* Sidebar (Collapsible) */
+.sidebar {
+    width: 250px;
+    background-color: var(--bg-secondary);
+    border-right: 1px solid rgba(74, 59, 50, 0.1);
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+}
+
+.brand {
+    font-family: var(--font-serif);
+    font-size: 24px;
+    font-weight: bold;
+    color: var(--accent-leather);
+    margin-bottom: 40px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.brand svg {
+    width: 32px;
+    height: 32px;
+}
+
+.nav-item {
+    padding: 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    color: var(--text-secondary);
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 500;
+}
+
+.nav-item:hover,
+.nav-item.active {
+    background-color: rgba(74, 59, 50, 0.05);
+    color: var(--accent-leather);
+}
+
+.nav-item.active {
+    background-color: #fff;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+/* Main Content Area */
+.main-content {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Dashboard View */
+.view-dashboard {
+    padding: 60px;
+    overflow-y: auto;
+}
+
+.greeting {
+    font-family: var(--font-serif);
+    font-size: 36px;
+    color: var(--accent-leather);
+    margin-bottom: 40px;
+}
+
+.project-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 30px;
+}
+
+.project-card {
+    background: #fff;
+    border-radius: 4px;
+    /* Simulating book cover/page */
+    padding: 24px;
+    box-shadow: var(--shadow-soft);
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border-left: 4px solid transparent;
+    position: relative;
+}
+
+.project-card::before {
+    content: '';
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    bottom: 5px;
+    width: 4px;
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 2px;
+    /* Page depth hint */
+}
+
+.project-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-deep);
+}
+
+.project-card.new-project {
+    border: 2px dashed rgba(74, 59, 50, 0.2);
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+}
+
+.card-title {
+    font-family: var(--font-serif);
+    font-size: 20px;
+    margin-bottom: 8px;
+    color: var(--text-primary);
+}
+
+.card-meta {
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+/* Editor View (Zen Mode) */
+.view-editor {
+    flex: 1;
+    background-color: var(--bg-primary);
+    display: flex;
+    justify-content: center;
+    overflow-y: scroll;
+    /* Native scroll for mockup */
+    padding-top: 100px;
+    padding-bottom: 300px;
+    /* Typewriter spacing */
+}
+
+.editor-surface {
+    max-width: 700px;
+    /* ~65 chars wide */
+    width: 100%;
+    outline: none;
+    font-family: var(--font-serif);
+    font-size: 20px;
+    line-height: 1.8;
+    color: #222;
+}
+
+.editor-surface p {
+    margin-bottom: 1.5em;
+}
+
+.editor-surface h1 {
+    font-size: 2.5em;
+    margin-bottom: 1em;
+    color: var(--accent-leather);
+    text-align: center;
+}
+
+/* HUD / Status */
+.hud {
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    padding: 20px;
+    opacity: 0.3;
+    transition: opacity 0.3s;
+    font-family: var(--font-sans);
+    font-size: 12px;
+}
+
+.hud:hover {
+    opacity: 1;
+}

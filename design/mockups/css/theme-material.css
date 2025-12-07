@@ -1,0 +1,102 @@
+:root {
+    /* Google Material Theme */
+    --bg-primary: #ffffff;
+    --bg-secondary: #f8f9fa;
+    /* Sidebar */
+    --text-primary: #202124;
+    --text-secondary: #5f6368;
+
+    --accent-gold: #1a73e8;
+    /* Google Blue */
+    --accent-leather: #202124;
+
+    --font-serif: 'Google Sans', 'Roboto', 'Arial', sans-serif;
+    /* Product Sans vibe */
+    --font-sans: 'Roboto', 'Arial', sans-serif;
+
+    --shadow-soft: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
+    --shadow-deep: 0 4px 4px 0 rgba(60, 64, 67, 0.3), 0 8px 12px 6px rgba(60, 64, 67, 0.15);
+
+    --border-radius: 8px;
+    /* Rounded corners */
+}
+
+body {
+    font-family: var(--font-sans);
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+.app-container {
+    background-color: #fff;
+}
+
+/* Sidebar - Material Navigation Drawer */
+.sidebar {
+    background-color: #fff;
+    border-right: none;
+    width: 256px;
+    padding: 12px;
+}
+
+.brand {
+    font-family: 'Product Sans', var(--font-serif);
+    color: var(--text-secondary);
+    font-size: 22px;
+    padding-left: 12px;
+    margin-bottom: 24px;
+}
+
+.nav-item {
+    border-radius: 0 24px 24px 0;
+    /* Material rounded right side */
+    padding: 10px 24px;
+    font-size: 14px;
+    font-weight: 500;
+    margin-right: 12px;
+}
+
+.nav-item:hover {
+    background-color: #f1f3f4;
+}
+
+.nav-item.active {
+    background-color: #e8f0fe;
+    color: var(--accent-gold);
+    box-shadow: none;
+}
+
+/* Cards - Material Cards */
+.greeting {
+    font-family: 'Product Sans', var(--font-serif);
+    color: var(--text-primary);
+}
+
+.project-card {
+    background-color: #fff;
+    border: 1px solid #dadce0;
+    border-radius: 8px;
+    box-shadow: none;
+}
+
+.project-card:before {
+    display: none;
+}
+
+.project-card:hover {
+    box-shadow: var(--shadow-soft);
+    border-color: #dadce0;
+    transform: translateY(-1px);
+}
+
+.project-card.new-project {
+    border: 1px dashed #dadce0;
+    background-color: #f8f9fa;
+    color: var(--accent-gold);
+    font-weight: 500;
+}
+
+.card-title {
+    font-family: 'Google Sans', var(--font-sans);
+    font-size: 16px;
+}

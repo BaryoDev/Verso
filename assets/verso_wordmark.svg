@@ -1,0 +1,6 @@
+<svg width="600" height="150" viewBox="0 0 600 150" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Font: Serif, Elegant, Classic Library Theme -->
+  <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="100" fill="#4A3B32" font-weight="bold" letter-spacing="4">VERSO</text>
+  <!-- Gold Accent Line -->
+  <line x1="150" y1="110" x2="450" y2="110" stroke="#D4AF37" stroke-width="4" stroke-linecap="round"/>
+</svg>

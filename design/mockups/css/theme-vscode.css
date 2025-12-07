@@ -1,0 +1,109 @@
+:root {
+    /* VS Code Dark+ Theme */
+    --bg-primary: #1e1e1e;
+    --bg-secondary: #252526;
+    /* Sidebar */
+    --bg-activity: #333333;
+    /* Activity bar proxy */
+    --text-primary: #cccccc;
+    --text-secondary: #969696;
+
+    --accent-gold: #007acc;
+    /* VS Code Blue instead of Gold */
+    --accent-leather: #ffffff;
+    /* White text for headers */
+
+    --font-serif: 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+    --font-sans: 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+
+    --shadow-soft: none;
+    --shadow-deep: 0 2px 8px rgba(0, 0, 0, 0.45);
+
+    --border-color: #3e3e3e;
+}
+
+body {
+    font-family: var(--font-sans);
+    /* VS Code is sans-serif everywhere */
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+/* Overrides for structure to look more like VS Code */
+.sidebar {
+    background-color: var(--bg-secondary);
+    border-right: 1px solid var(--border-color);
+    width: 300px;
+}
+
+.brand {
+    font-size: 11px;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    padding-left: 8px;
+    margin-bottom: 10px;
+}
+
+.nav-item {
+    border-radius: 0;
+    padding: 4px 8px;
+    font-size: 13px;
+    color: var(--text-primary);
+}
+
+.nav-item:hover {
+    background-color: #2a2d2e;
+}
+
+.nav-item.active {
+    background-color: #37373d;
+    color: #fff;
+    box-shadow: none;
+    border-left: 2px solid var(--accent-gold);
+}
+
+/* Dashboard Cards - Code Look */
+.view-dashboard {
+    padding: 0;
+}
+
+.greeting {
+    background-color: #1e1e1e;
+    font-family: var(--font-sans);
+    font-weight: 300;
+    font-size: 28px;
+    color: #fff;
+    padding: 40px;
+    margin: 0;
+}
+
+.project-grid {
+    padding: 0 40px;
+}
+
+.project-card {
+    background-color: #252526;
+    border: 1px solid var(--border-color);
+    box-shadow: none;
+    border-radius: 0;
+    color: #cccccc;
+}
+
+.project-card:before {
+    display: none;
+}
+
+/* No book depth */
+
+.project-card:hover {
+    transform: none;
+    background-color: #2a2d2e;
+    border-color: #007acc;
+}
+
+.card-title {
+    font-family: var(--font-sans);
+    font-size: 14px;
+    color: #fff;
+    font-weight: 600;
+}

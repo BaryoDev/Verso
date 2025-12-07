@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verso - Editor</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        /* Specific override for Editor just in case */
+        body {
+            background-color: var(--bg-primary);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="app-container">
+        <!-- Sidebar (Collapsed/Hidden in Zen Mode usually, but shown here for context or toggleable) 
+             For this mockup, we'll assume sidebar is hidden or user just focused.
+             Let's show a "Ghost" sidebar trigger on the left -->
+        <div
+            style="width: 50px; height: 100%; position: absolute; left: 0; top: 0; z-index: 100; transition: 0.2s; opacity: 0;">
+            <!-- Hover area to reveal sidebar -->
+        </div>
+
+        <main class="main-content view-editor">
+            <div class="editor-surface" contenteditable="true">
+                <h1>Chapter 5: The Red Door</h1>
+                <p>The rain hadn't stopped for three days. It drummed against the windowpane with a persistence that
+                    felt personal, a rhythmic accusation that Christie tried to ignore as she paced the small study.</p>
+                <p>"It's just water," she muttered, tracing the spine of an old encyclopedia. "Just atmospheric pressure
+                    and gravity."</p>
+                <p>But she knew it wasn't. The sky hung low and heavy, the color of a bruised plum. In the corner, the
+                    grandfather clock ticked—a slow, deliberate sound that seemed to stretch the silence between
+                    seconds. <em>Tick... tock... tick...</em></p>
+                <p>She turned back to the desk. The letter sat there, unopened. The wax seal, stamped with a crest she
+                    didn't recognize, seemed to pulse in the dim light. A Griffin? A Dragon? It was too smeared to tell.
+                </p>
+                <p>Joseph would know. Joseph always knew these things. But Joseph wasn't here. He was effectively a
+                    ghost now, a memory of a confident rich gentleman that haunted the hallways of her mind more than
+                    the house itself.</p>
+                <p>She sat down, the leather chair creaking in protest. Her fingers hovered over the keys of the
+                    typewriter, but the words wouldn't come. The tension in the room was palpable, a physical weight
+                    pressing against her chest.</p>
+                <p>Suddenly, a knock. Three sharp raps.</p>
+                <p>Christie froze. The front door was locked. The servants were gone for the weekend.</p>
+                <p>Another knock. Louder this time.</p>
+            </div>
+        </main>
+
+        <!-- Status HUD -->
+        <div class="hud">
+            45,201 words | Chapter 5 | <span class="text-gold">Saving...</span>
+        </div>
+    </div>
+
+    <!-- Simple JS to simulate Typewriter Scrolling behavior roughly -->
+    <script>
+        const editor = document.querySelector('.view-editor');
+        const surface = document.querySelector('.editor-surface');
+
+        // Auto-focus
+        surface.focus();
+
+        // Very basic "keep centered" logic for mockup visual
+        surface.addEventListener('keyup', () => {
+            // In a real app, we'd calculate line height and scroll position precisely
+            // window.scrollTo(0, document.body.scrollHeight);
+        });
+    </script>
+</body>
+
+</html>

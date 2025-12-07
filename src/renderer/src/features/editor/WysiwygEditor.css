@@ -1,0 +1,237 @@
+/* src/renderer/src/features/editor/WysiwygEditor.css */
+
+.wysiwyg-container {
+    height: 100%;
+    width: 100%;
+    overflow-y: auto;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    cursor: text;
+}
+
+/* The actual editor area */
+.ProseMirror {
+    min-height: 100%;
+    outline: none;
+    max-width: 800px;
+    /* Readable width */
+    margin: 0 auto;
+    padding: 40px 60px;
+    font-family: var(--font-serif);
+    /* Use the theme's serif/sans font for reading */
+    font-size: 16px;
+    line-height: 1.8;
+    color: var(--text-primary);
+}
+
+/* Typography Styles */
+.ProseMirror h1 {
+    font-size: 2.2em;
+    font-weight: 700;
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+    line-height: 1.2;
+}
+
+.ProseMirror h2 {
+    font-size: 1.8em;
+    font-weight: 600;
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+}
+
+.ProseMirror h3 {
+    font-size: 1.4em;
+    font-weight: 600;
+    margin-top: 1.2em;
+    margin-bottom: 0.5em;
+}
+
+.ProseMirror p {
+    margin-bottom: 1.2em;
+}
+
+.ProseMirror ul,
+.ProseMirror ol {
+    padding-left: 1.5em;
+    margin-bottom: 1.2em;
+}
+
+.ProseMirror blockquote {
+    border-left: 4px solid var(--accent-gold);
+    padding-left: 1em;
+    margin-left: 0;
+    font-style: italic;
+    color: var(--text-secondary);
+}
+
+.ProseMirror code {
+    background-color: var(--bg-secondary);
+    padding: 0.2em 0.4em;
+    border-radius: 3px;
+    font-family: var(--font-mono, monospace);
+    font-size: 0.9em;
+}
+
+.ProseMirror pre {
+    background-color: var(--bg-secondary);
+    padding: 1em;
+    border-radius: 4px;
+    overflow-x: auto;
+}
+
+.ProseMirror pre code {
+    background-color: transparent;
+    padding: 0;
+}
+
+.ProseMirror hr {
+    border: none;
+    border-top: 2px solid var(--border-color);
+    margin: 2em 0;
+}
+
+/* VS Code Theme Specifics */
+[data-theme='vscode'] .ProseMirror {
+    font-family: 'Segoe UI', sans-serif;
+    /* VS Code feels better with sans */
+}
+
+/* Toolbar Styles */
+.editor-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background-color: var(--bg-secondary);
+    /* Slightly different from editor bg */
+    border-bottom: 1px solid var(--border-color);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    /* Ensure on top of content */
+    flex-wrap: wrap;
+}
+
+[data-theme='vscode'] .editor-toolbar {
+    background-color: #252526;
+    border-bottom: 1px solid #454545;
+}
+
+.toolbar-group {
+    display: flex;
+    align-items: center;
+    gap: 0.2rem;
+}
+
+.toolbar-divider {
+    width: 1px;
+    height: 1.25rem;
+    background-color: var(--border-color);
+    margin: 0 0.5rem;
+}
+
+.editor-toolbar button {
+    border: none;
+    background: none;
+    color: var(--text-secondary);
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.editor-toolbar button:hover {
+    background-color: var(--hover-bg);
+    color: var(--text-primary);
+}
+
+.editor-toolbar button.is-active {
+    background-color: rgba(var(--accent-gold-rgb), 0.15);
+    color: var(--accent-gold);
+}
+
+[data-theme='vscode'] .editor-toolbar button.is-active {
+    background-color: rgba(77, 170, 252, 0.15);
+    color: #4daafc;
+}
+
+.editor-toolbar button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Adjust Editor Content */
+.ProseMirror {
+    padding: 2rem;
+    /* Add consistent padding */
+    min-height: calc(100vh - 40px);
+    /* Adjust for toolbar height */
+}
+
+/* Selection Color */
+.ProseMirror ::selection {
+    background-color: rgba(var(--accent-gold-rgb), 0.3);
+}
+
+/* --- Menus --- */
+
+/* Shared Menu Container Styles */
+.bubble-menu,
+.floating-menu {
+    display: flex;
+    background-color: var(--bg-activity);
+    /* Use activity bar color for dark contrast */
+    padding: 0.2rem;
+    border-radius: 6px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    /* Drop shadow */
+    border: 1px solid var(--border-color);
+}
+
+[data-theme='vscode'] .bubble-menu,
+[data-theme='vscode'] .floating-menu {
+    background-color: #252526;
+    /* Darker for VS Code */
+    border: 1px solid #454545;
+}
+
+/* Menu Buttons */
+.bubble-menu button,
+.floating-menu button {
+    border: none;
+    background: none;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    font-weight: 500;
+    padding: 0.4rem 0.6rem;
+    cursor: pointer;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.bubble-menu button:hover,
+.floating-menu button:hover {
+    background-color: var(--hover-bg);
+    color: var(--text-primary);
+}
+
+.bubble-menu button.is-active,
+.floating-menu button.is-active {
+    color: var(--accent-gold);
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme='vscode'] .bubble-menu button.is-active,
+[data-theme='vscode'] .floating-menu button.is-active {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #4daafc;
+    /* VS Code Blue */
+}

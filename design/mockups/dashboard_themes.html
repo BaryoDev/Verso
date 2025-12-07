@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verso - Theme Demo</title>
+    <!-- Default Logic will load style.css, but we will swap it via JS -->
+    <link id="theme-stylesheet" rel="stylesheet" href="css/style.css">
+    <style>
+        .theme-switcher {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px;
+            border-radius: 8px;
+            display: flex;
+            gap: 10px;
+            z-index: 9999;
+        }
+
+        .theme-btn {
+            background: #fff;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-family: sans-serif;
+        }
+
+        .theme-btn:hover {
+            background: #eee;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Theme Switcher for Demo -->
+    <div class="theme-switcher">
+        <button class="theme-btn" onclick="setTheme('css/style.css')">Classic Library</button>
+        <button class="theme-btn" onclick="setTheme('css/theme-vscode.css')">VS Code Dark</button>
+        <button class="theme-btn" onclick="setTheme('css/theme-material.css')">Google Material</button>
+    </div>
+
+    <!-- Reuse the Dashboard Structure -->
+    <div class="app-container">
+        <!-- Sidebar -->
+        <nav class="sidebar">
+            <div class="brand">
+                <!-- SVG Icon inline for mockup (simplified) -->
+                <svg width="24" height="24" viewBox="0 0 1024 1024" fill="none" class="brand-icon">
+                    <rect x="50" y="50" width="924" height="924" rx="200" fill="currentColor" fill-opacity="0.2" />
+                    <!-- Simple V shape -->
+                    <path d="M 300 300 L 512 800 L 724 300" stroke="currentColor" stroke-width="80"
+                        stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                <span style="margin-left: 10px">Verso</span>
+            </div>
+
+            <div class="nav-item active">
+                <span>Recent Projects</span>
+            </div>
+            <div class="nav-item">
+                <span>Templates</span>
+            </div>
+            <div class="nav-item">
+                <span>Verso Cloud</span>
+            </div>
+
+            <div style="flex:1"></div>
+
+            <div class="nav-item">
+                <span>Settings</span>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content view-dashboard">
+            <h1 class="greeting">Good afternoon, Author.</h1>
+
+            <div class="project-grid">
+                <!-- New Project Card -->
+                <div class="project-card new-project">
+                    <span>+ Create New Story</span>
+                </div>
+
+                <!-- Existing Project 1 -->
+                <div class="project-card">
+                    <div class="card-title">Death of Decency</div>
+                    <div class="card-meta">Last edited 2 hours ago</div>
+                    <div class="card-meta">45,201 words</div>
+                </div>
+
+                <!-- Existing Project 2 -->
+                <div class="project-card">
+                    <div class="card-title">The Glass Clock</div>
+                    <div class="card-meta">Last edited yesterday</div>
+                    <div class="card-meta">12,050 words</div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        function setTheme(sheet) {
+            document.getElementById('theme-stylesheet').href = sheet;
+        }
+    </script>
+
+</body>
+
+</html>

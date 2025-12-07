@@ -1,0 +1,13 @@
+node_modules
+out
+dist
+build
+.DS_Store
+*.log
+.env
+.idea
+.vscode
+coverage
+tmp
+.eslintcache
+*.log*

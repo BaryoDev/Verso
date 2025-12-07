@@ -1,0 +1,100 @@
+/* src/renderer/src/styles/themes.css */
+:root {
+    /* Default to Classic Library (Flat Version) */
+    --bg-primary: #F9F9F5;
+    /* Very light cream, almost white */
+    --bg-secondary: #F0F0EB;
+    /* Distinct but flat sidebar */
+    --bg-activity: #E8E8E2;
+    /* Slightly darker activity bar */
+    --text-primary: #333333;
+    --text-secondary: #666666;
+    --accent-gold: #D4AF37;
+    --accent-leather: #4A3B32;
+    --font-serif: 'Georgia', 'Merriweather', serif;
+    --font-sans: 'Inter', system-ui, sans-serif;
+
+    /* Flat Design Tokens */
+    --shadow-soft: none;
+    /* No weights */
+    --shadow-deep: none;
+    --border-radius: 0px;
+    /* Sharp corners for professional feel */
+    --border-color: #E0E0E0;
+    /* Subtle 1px borders */
+    --hover-bg: rgba(0, 0, 0, 0.04);
+}
+
+[data-theme='vscode'] {
+    --bg-primary: #1e1e1e;
+    --bg-secondary: #252526;
+    --bg-activity: #333333;
+    --text-primary: #cccccc;
+    --text-secondary: #969696;
+    --accent-gold: #007acc;
+    --accent-leather: #ffffff;
+    --font-serif: 'Segoe UI', system-ui, sans-serif;
+    --font-sans: 'Segoe UI', system-ui, sans-serif;
+    --border-color: #2b2b2b;
+    --hover-bg: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme='material'] {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f3f3f3;
+    --bg-activity: #f0f0f0;
+    --text-primary: #202124;
+    --text-secondary: #5f6368;
+    --accent-gold: #1a73e8;
+    --accent-leather: #202124;
+    --font-serif: 'Roboto', sans-serif;
+    --font-sans: 'Roboto', sans-serif;
+    --border-color: #dadce0;
+    --hover-bg: #f1f3f4;
+}
+
+body {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    margin: 0;
+}
+
+/* Sleek Scrollbars (VS Code style) */
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(121, 121, 121, 0.4);
+    border-radius: 5px;
+    /* Softer feel */
+    border: 2px solid transparent;
+    /* Padding effect */
+    background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(121, 121, 121, 0.7);
+    background-clip: content-box;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-corner {
+    background: transparent;
+}
+
+[data-theme='vscode'] ::-webkit-scrollbar-thumb {
+    background: #424242;
+    border-radius: 0;
+    /* Boxy for VS Code */
+    border: none;
+}
+
+[data-theme='vscode'] ::-webkit-scrollbar-thumb:hover {
+    background: #4f4f4f;
+}

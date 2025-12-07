@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verso - Dashboard</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+    <div class="app-container">
+        <!-- Sidebar -->
+        <nav class="sidebar">
+            <div class="brand">
+                <!-- SVG Icon inline for mockup -->
+                <svg width="24" height="24" viewBox="0 0 1024 1024" fill="none">
+                    <rect x="50" y="50" width="924" height="924" rx="200" fill="#4A3B32" />
+                    <path d="M200 250 H 824 V 800 C 824 800 512 850 512 850 C 512 850 200 800 200 800 V 250 Z"
+                        fill="#D4AF37" />
+                    <path d="M220 270 H 804 V 780 C 804 780 512 830 512 830 C 512 830 220 780 220 780 V 270 Z"
+                        fill="#F5F5DC" />
+                </svg>
+                Verso
+            </div>
+
+            <div class="nav-item active">
+                <span>Recent Projects</span>
+            </div>
+            <div class="nav-item">
+                <span>Templates</span>
+            </div>
+            <div class="nav-item">
+                <span>Verso Cloud</span>
+            </div>
+
+            <div style="flex:1"></div>
+
+            <div class="nav-item">
+                <span>Settings</span>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content view-dashboard">
+            <h1 class="greeting">Good afternoon, Author.</h1>
+
+            <div class="project-grid">
+                <!-- New Project Card -->
+                <div class="project-card new-project" onclick="window.location.href='editor.html'">
+                    <span>+ Create New Story</span>
+                </div>
+
+                <!-- Existing Project 1 -->
+                <div class="project-card" onclick="window.location.href='editor.html'">
+                    <div class="card-title">Death of Decency</div>
+                    <div class="card-meta">Last edited 2 hours ago</div>
+                    <div class="card-meta">45,201 words</div>
+                </div>
+
+                <!-- Existing Project 2 -->
+                <div class="project-card" onclick="window.location.href='editor.html'">
+                    <div class="card-title">The Glass Clock</div>
+                    <div class="card-meta">Last edited yesterday</div>
+                    <div class="card-meta">12,050 words</div>
+                </div>
+
+                <!-- Existing Project 3 -->
+                <div class="project-card">
+                    <div class="card-title">Poetry Collection 2024</div>
+                    <div class="card-meta">Last edited 5 days ago</div>
+                    <div class="card-meta">480 words</div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+</body>
+
+</html>
