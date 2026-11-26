@@ -168,6 +168,26 @@ describe('createRootStore', () => {
     }
   })
 
+  it('never reaches a folder that runs files, even inside an opened folder', () => {
+    const store = createRootStore(file)
+    const root = path.join(dir, 'Documents')
+    fs.mkdirSync(path.join(root, 'PowerShell'), { recursive: true })
+    fs.mkdirSync(path.join(root, 'sub', 'Startup'), { recursive: true })
+    fs.symlinkSync(path.join(root, 'PowerShell'), path.join(root, 'alias'))
+    store.allow(root)
+    for (const parts of [
+      ['PowerShell', 'Microsoft.PowerShell_profile.ps1'],
+      ['powershell.', 'profile.ps1'],
+      ['WindowsPowerShell', 'profile.ps1'],
+      ['sub', 'Startup', 'run.lnk'],
+      ['alias', 'profile.ps1']
+    ]) {
+      expect(() => store.check(path.join(root, ...parts))).toThrow('outside the opened folders')
+    }
+    expect(() => store.allow(path.join(root, 'sub', 'Startup'))).toThrow('invalid folder')
+    expect(store.check(path.join(root, 'Novel', 'a.md'))).toBe(path.join(root, 'Novel', 'a.md'))
+  })
+
   it('drops saved folders it would refuse to open', () => {
     const home = path.join(dir, 'home', 'me')
     const root = path.join(home, 'Novel')

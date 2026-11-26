@@ -15,6 +15,16 @@ function touchesGitDir(p) {
   })
 }
 
+// Folder names that run what is in them: PowerShell profiles, macOS launch
+// agents, Linux autostart and the Windows Startup folder. No path through one
+// is opened, read or written, so opening Documents does not hand the page
+// Documents/PowerShell and its profile script. Same spellings as .git above.
+const RUNS_FILES = new Set(['powershell', 'windowspowershell', 'launchagents', 'launchdaemons', 'autostart', 'startup'])
+
+function touchesRunFolder(p) {
+  return p.split(/[\\/]/).some((part) => RUNS_FILES.has(part.toLowerCase().split(':')[0].replace(/[. ]+$/, '')))
+}
+
 // Where a path really is, after following every link. A path that does not
 // exist yet resolves through its nearest existing parent. A link that points at
 // nothing is refused, because writing through it would create its target.
@@ -46,12 +56,11 @@ function isWithin(child, parent) {
 }
 
 // Folders under home that hold settings or start programs: any hidden folder
-// (.config, .ssh, .local), ~/Library, AppData and the PowerShell profile folders.
+// (.config, .ssh, .local), ~/Library and AppData.
 // Verso never opens or creates a folder in one, even when the person picks it,
 // or the page could write a shell config or a login item there. Cloud drives on
 // macOS sit under ~/Library, so those two folders stay usable.
 const CLOUD_DRIVES = new Set(['mobile documents', 'cloudstorage'])
-const PROFILE_FOLDERS = new Set(['powershell', 'windowspowershell'])
 
 function inSettingsArea(real, home) {
   if (real === home || !isWithin(real, home)) return false
@@ -59,7 +68,7 @@ function inSettingsArea(real, home) {
     .relative(home, real)
     .split(path.sep)
     .map((part) => part.toLowerCase().replace(/[. ]+$/, ''))
-  if (parts.some((part) => part.startsWith('.') || PROFILE_FOLDERS.has(part))) return true
+  if (parts.some((part) => part.startsWith('.'))) return true
   if (parts[0] === 'appdata') return true
   return parts[0] === 'library' && !CLOUD_DRIVES.has(parts[1])
 }
@@ -76,7 +85,8 @@ export function createRootStore(file, { home = os.homedir() } = {}) {
   const homeReal = realLocation(home)
   const ownFolder = realLocation(path.dirname(file))
   const tooWide = (real) => isWithin(homeReal, real) || isWithin(ownFolder, real) || isWithin(real, ownFolder)
-  const usable = (real) => !touchesGitDir(real) && !tooWide(real) && !inSettingsArea(real, homeReal)
+  const usable = (real) =>
+    !touchesGitDir(real) && !touchesRunFolder(real) && !tooWide(real) && !inSettingsArea(real, homeReal)
   let roots = []
   try {
     const saved = JSON.parse(fs.readFileSync(file, 'utf-8'))
@@ -118,7 +128,7 @@ export function createRootStore(file, { home = os.homedir() } = {}) {
   function check(target) {
     if (typeof target !== 'string' || target === '') throw new Error(OUTSIDE)
     const asked = path.resolve(target)
-    if (touchesGitDir(asked)) throw new Error(OUTSIDE)
+    if (touchesGitDir(asked) || touchesRunFolder(asked)) throw new Error(OUTSIDE)
     let real
     try {
       real = realLocation(target)
@@ -131,7 +141,7 @@ export function createRootStore(file, { home = os.homedir() } = {}) {
       }
       throw new Error(OUTSIDE)
     }
-    if (touchesGitDir(real)) throw new Error(OUTSIDE)
+    if (touchesGitDir(real) || touchesRunFolder(real)) throw new Error(OUTSIDE)
     if (!roots.some((root) => isWithin(real, root))) throw new Error(OUTSIDE)
     return real
   }
@@ -157,12 +167,6 @@ export function createRootStore(file, { home = os.homedir() } = {}) {
   }
 }
 
-// Folder names that run what is in them: PowerShell profiles, macOS launch
-// agents, Linux autostart and the Windows Startup folder. Their usual places are
-// settings areas, which vet refuses; the name check also covers a parent that
-// is not under home, such as another drive.
-const RUNS_FILES = new Set(['powershell', 'windowspowershell', 'launchagents', 'launchdaemons', 'autostart', 'startup'])
-
 // A new project folder name must be a single plain name. The page picks it, so
 // it is never hidden and never a folder the system runs files from, or a
 // person who chose their home folder would hand the page ~/.ssh.
@@ -171,7 +175,7 @@ export function checkProjectName(name) {
     throw new Error('invalid project name')
   }
   // Windows drops trailing dots and spaces, so "PowerShell." is PowerShell.
-  if (RUNS_FILES.has(name.toLowerCase().replace(/[. ]+$/, '')) || touchesGitDir(name)) {
+  if (touchesRunFolder(name) || touchesGitDir(name)) {
     throw new Error('invalid project name')
   }
   return name
