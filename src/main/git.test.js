@@ -45,6 +45,20 @@ describe('git handlers', () => {
     expect(fs.readFileSync(path.join(outer, 'secret.md'), 'utf-8')).toBe('changed\n')
   })
 
+  it('never treats files the page wrote as a repository', async () => {
+    const marker = path.join(base, 'ran')
+    for (const d of ['objects', 'refs', 'refs/heads']) fs.mkdirSync(path.join(project, d), { recursive: true })
+    fs.writeFileSync(path.join(project, 'HEAD'), 'ref: refs/heads/main\n')
+    fs.writeFileSync(
+      path.join(project, 'config'),
+      `[core]\n\tbare = false\n\tworktree = ${project}\n\tfsmonitor = "touch '${marker}'"\n`
+    )
+    expect(await call('git:status', project)).toBeNull()
+    expect(await call('git:diff', project, 'HEAD')).toBeNull()
+    await expect(call('git:commit', project, 'x')).rejects.toThrow('not a git repository')
+    expect(fs.existsSync(marker)).toBe(false)
+  })
+
   it('works inside the project and refuses files outside it', async () => {
     expect(await call('git:init', project)).toBe(true)
     configure(project)

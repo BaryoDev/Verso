@@ -4,11 +4,19 @@ import path from 'path';
 import { simpleGit } from 'simple-git';
 import { checkRevision, pathArgs } from './safety';
 
-// Git runs only on a repository whose top is the opened folder itself. Without
-// this, a folder with no repository of its own would make git use one in a
-// parent folder (a home folder, say), and commit, push or restore there.
+// Git runs only on the repository in the opened folder's own .git. Without
+// this, a folder with no .git would make git use a repository in a parent
+// folder (a home folder, say), or treat the folder itself as a bare repository
+// built from files the page wrote (HEAD, config, objects, refs), whose config
+// can run programs. Git checks .git before either, and page code can never
+// create a .git entry, so its presence means git uses the person's repository.
 async function repoAt(roots, projectPath) {
   const dir = roots.check(projectPath);
+  try {
+    fs.lstatSync(path.join(dir, '.git'));
+  } catch {
+    throw new Error('not a git repository');
+  }
   const git = simpleGit(dir);
   const top = (await git.revparse(['--show-toplevel'])).trim();
   if (fs.realpathSync.native(top) !== dir) throw new Error('not a git repository');
