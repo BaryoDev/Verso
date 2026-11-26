@@ -1,6 +1,7 @@
 import { ipcMain, dialog } from 'electron';
 import fs from 'fs/promises';
 import path from 'path';
+import { checkProjectName } from './roots';
 
 // Helper to scan directory
 async function readDirRecursive(dirPath, rootPath = null) {
@@ -37,18 +38,35 @@ async function readDirRecursive(dirPath, rootPath = null) {
   return children.filter(Boolean);
 }
 
-export function setupIPC() {
+export function setupIPC(roots) {
+  // Where the person chose to put a new project. It is good for one
+  // createProject call and is never opened itself, so choosing a parent such as
+  // the home folder does not give the page that folder.
+  let chosenParent = null;
+
   // Open Directory Dialog
   ipcMain.handle('dialog:openDirectory', async () => {
     const { canceled, filePaths } = await dialog.showOpenDialog({
       properties: ['openDirectory']
     });
     if (canceled) return null;
-    return filePaths[0]; // Return the path string
+    return roots.allow(filePaths[0]); // Return the path string
   });
 
-  // Read Directory (Recursive)
+  ipcMain.handle('dialog:chooseParent', async () => {
+    chosenParent = null;
+    const { canceled, filePaths } = await dialog.showOpenDialog({
+      properties: ['openDirectory', 'createDirectory']
+    });
+    if (canceled) return null;
+    chosenParent = await fs.realpath(filePaths[0]);
+    return chosenParent;
+  });
+
+  // Read Directory (Recursive). A folder that was never opened is refused, so
+  // the page can tell the person to open it again.
   ipcMain.handle('fs:readDir', async (_, dirPath) => {
+    dirPath = roots.check(dirPath);
     try {
       const children = await readDirRecursive(dirPath);
       // Return as a root node
@@ -66,22 +84,30 @@ export function setupIPC() {
 
   // Read File
   ipcMain.handle('fs:readFile', async (_, filePath) => {
-    return await fs.readFile(filePath, 'utf-8');
+    return await fs.readFile(roots.check(filePath), 'utf-8');
   });
 
   // Write File
   ipcMain.handle('fs:writeFile', async (_, filePath, content) => {
-    await fs.writeFile(filePath, content, 'utf-8');
+    await fs.writeFile(roots.check(filePath), content, 'utf-8');
     return true;
   });
 
   // Create Project
-  ipcMain.handle('fs:createProject', async (_, { parentPath, projectName, type, author }) => {
+  ipcMain.handle('fs:createProject', async (_, { parentPath, projectName, type, author } = {}) => {
+    let made = null;
     try {
-      const projectPath = path.join(parentPath, projectName);
-      
-      // 1. Create Project Root
-      await fs.mkdir(projectPath, { recursive: true });
+      const parent = chosenParent;
+      chosenParent = null;
+      if (!parent || typeof parentPath !== 'string' || path.resolve(parentPath) !== parent) {
+        throw new Error('choose where to put the project first');
+      }
+      const projectPath = roots.vet(path.join(parent, checkProjectName(projectName)));
+
+      // 1. Create Project Root. Not recursive, so an existing folder or link of
+      // that name is refused instead of written through.
+      await fs.mkdir(projectPath);
+      made = projectPath;
 
       // 2. Create verso.config.json
       const config = {
@@ -122,8 +148,11 @@ export function setupIPC() {
         );
       }
 
-      return projectPath;
+      return roots.allow(projectPath);
     } catch (error) {
+      // Take back a folder this call made but could not finish, so trying again
+      // with the same name works. Nothing else can be in it yet.
+      if (made) await fs.rm(made, { recursive: true, force: true }).catch(() => {});
       console.error('fs:createProject error:', error);
       throw error;
     }

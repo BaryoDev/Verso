@@ -74,6 +74,14 @@ function App() {
     });
   };
 
+  const forgetRecent = (path) => {
+    setRecentProjects(prev => {
+      const updated = prev.filter(p => p.path !== path);
+      localStorage.setItem('verso_recents', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
   // Helper for Testing
   const getFileApi = () => {
     return window.__test_api || window.api?.files;
@@ -91,14 +99,33 @@ function App() {
     if (actionOrPath === 'existing') {
       const api = getFileApi();
       if (!api) { console.error('No File API found'); return; }
-      path = await api.openDirectory();
+      try {
+        path = await api.openDirectory();
+      } catch (error) {
+        console.error('Failed to open folder:', error);
+        alert('That folder cannot be opened as a project. Choose the folder that holds the project itself, not your home folder or a folder above it.');
+        return;
+      }
     }
 
     if (path) {
+      try {
+        await loadProjectFiles(path);
+      } catch (error) {
+        console.error('Failed to load project:', error);
+        if (String(error?.message).includes('outside the opened folders')) {
+          // Folders from an older version, or ones never opened here, are
+          // refused until the person opens them once with Open Folder.
+          forgetRecent(path);
+          alert('Open this folder again with Open Folder. Verso only reads folders you open there.');
+        } else {
+          alert('Verso could not read this folder. Check that it is still there and that you can open it.');
+        }
+        return;
+      }
       setCurrentProject(path);
       addToRecents(path);
       setView('editor');
-      loadProjectFiles(path);
     }
   };
 
@@ -237,28 +264,36 @@ function App() {
     const api = getFileApi();
     if (!api) return;
 
-    const parentPath = await api.openDirectory();
-    if (!parentPath) return;
-
+    let newProjectPath;
     try {
-      const newProjectPath = await api.createProject({
+      const parentPath = await api.chooseParent();
+      if (!parentPath) return;
+
+      newProjectPath = await api.createProject({
         parentPath,
         projectName: name,
         type,
         author: 'User'
       });
-
-      if (newProjectPath) {
-        await loadProjectFiles(newProjectPath);
-        setCurrentProject(newProjectPath);
-        addToRecents({
-          path: newProjectPath,
-          name: name,
-          type: type
-        });
-      }
     } catch (error) {
       console.error("Failed to create project:", error);
+      alert(
+        String(error?.message).includes('invalid project name')
+          ? `"${name}" cannot be a project name. Names cannot start with a dot, hold a slash or colon, or be a folder the system runs files from.`
+          : `Could not create "${name}". A file or folder with that name may already be there.`
+      );
+      return;
+    }
+    if (!newProjectPath) return;
+
+    // The project exists now, so keep it in recents even if opening it fails.
+    addToRecents({ path: newProjectPath, name, type });
+    try {
+      await loadProjectFiles(newProjectPath);
+      setCurrentProject(newProjectPath);
+    } catch (error) {
+      console.error('Failed to open the new project:', error);
+      alert(`"${name}" was created but could not be opened. Open it from your recent projects.`);
     }
   };
 

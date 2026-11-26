@@ -4,6 +4,8 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { setupIPC } from './ipc' // Register Handlers
 import { setupGitIPC } from './git'
+import { isSafeExternalUrl } from './safety'
+import { createRootStore } from './roots'
 
 function createWindow() {
 // ... existing window creation ...
@@ -15,9 +17,9 @@ function createWindow() {
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
-      sandbox: false,
-      contextIsolation: false,
-      nodeIntegration: true
+      sandbox: true,
+      contextIsolation: true,
+      nodeIntegration: false
     }
   })
 
@@ -27,8 +29,13 @@ function createWindow() {
   })
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
-    shell.openExternal(details.url)
+    if (isSafeExternalUrl(details.url)) shell.openExternal(details.url)
     return { action: 'deny' }
+  })
+
+  // The window only ever shows the app itself.
+  mainWindow.webContents.on('will-navigate', (event, url) => {
+    if (url !== mainWindow.webContents.getURL()) event.preventDefault()
   })
 
   // HMR for renderer base on electron-vite cli.
@@ -47,9 +54,12 @@ app.whenReady().then(() => {
   })
 
   // Setup our File System IPC
-  setupIPC();
-  // Setup Git IPC
-  setupGitIPC();
+  const roots = createRootStore(join(app.getPath('userData'), 'allowed-roots.json'))
+  setupIPC(roots);
+  // Git runs with hooks taken from a folder that holds none. It sits next to
+  // the opened-folder list, which no opened folder may hold or sit in, so the
+  // page can never put a hook there.
+  setupGitIPC(roots, { hooksPath: join(app.getPath('userData'), 'no-hooks') });
 
   createWindow()
 

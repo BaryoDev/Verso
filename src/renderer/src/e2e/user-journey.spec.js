@@ -1,10 +1,15 @@
 import { test, expect } from '@playwright/test';
 import { _electron as electron } from 'playwright';
+import fs from 'fs';
+import os from 'os';
 import path from 'path';
 
 test.describe('Verso User Journey', () => {
   let electronApp;
   let page;
+  // A fresh profile, so folders opened in the developer's own copy of the app
+  // never count here.
+  const userData = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'verso-e2e-')));
 
   test.beforeAll(async () => {
     // Launch Electron app
@@ -13,12 +18,54 @@ test.describe('Verso User Journey', () => {
     
     electronApp = await electron.launch({
       executablePath: electronPath,
-      args: [path.join(process.cwd(), 'out/main/index.js')],
+      args: [path.join(process.cwd(), 'out/main/index.js'), `--user-data-dir=${userData}`],
     });
     
     // Get the first window
     page = await electronApp.firstWindow();
     page.on('console', msg => console.log(`[Browser Console]: ${msg.text()}`));
+  });
+
+  test.afterAll(async () => {
+    await electronApp?.close();
+    fs.rmSync(userData, { recursive: true, force: true });
+  });
+
+  test('page code has no Node access and reaches files only through the preload bridge', async () => {
+    await page.waitForLoadState('load');
+    const seen = await page.evaluate(() => ({
+      require: typeof window.require,
+      process: typeof window.process,
+      electron: typeof window.electron,
+      readFile: typeof window.api?.files?.readFile,
+      gitStatus: typeof window.api?.git?.status
+    }));
+    expect(seen).toEqual({
+      require: 'undefined',
+      process: 'undefined',
+      electron: 'undefined',
+      readFile: 'function',
+      gitStatus: 'function'
+    });
+
+    const prefs = await electronApp.evaluate(({ BrowserWindow }) => {
+      const p = BrowserWindow.getAllWindows()[0].webContents.getLastWebPreferences();
+      return { sandbox: p.sandbox, contextIsolation: p.contextIsolation, nodeIntegration: p.nodeIntegration };
+    });
+    expect(prefs).toEqual({ sandbox: true, contextIsolation: true, nodeIntegration: false });
+    expect(await electronApp.evaluate(({ app }) => app.getPath('userData'))).toBe(userData);
+  });
+
+  test('page code cannot read or write files outside an opened folder', async () => {
+    const result = await page.evaluate(async () => {
+      const outcome = async (call) => call.then(() => 'allowed', () => 'refused');
+      return {
+        read: await outcome(window.api.files.readFile('/etc/hosts')),
+        write: await outcome(window.api.files.saveFile('/tmp/verso-e2e-should-not-exist.txt', 'x')),
+        git: await outcome(window.api.git.init('/tmp'))
+      };
+    });
+    expect(result).toEqual({ read: 'refused', write: 'refused', git: 'refused' });
   });
 
   test('can navigate from dashboard to editor and back', async () => {
