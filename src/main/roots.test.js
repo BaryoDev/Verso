@@ -142,6 +142,32 @@ describe('createRootStore', () => {
     expect(() => createRootStore(file).allow(os.homedir())).toThrow('invalid folder')
   })
 
+  it('never opens or creates a folder in a settings area under home', () => {
+    const home = path.join(dir, 'home', 'me')
+    const store = createRootStore(file, { home })
+    for (const parts of [
+      ['.config', 'fish'],
+      ['.local', 'share', 'Novel'],
+      ['Library'],
+      ['Library', 'LaunchAgents'],
+      ['library', 'Application Support', 'Novel'],
+      ['AppData', 'Roaming', 'Novel'],
+      ['Documents', 'PowerShell'],
+      ['Documents', 'WindowsPowerShell', 'Scripts']
+    ]) {
+      expect(() => store.allow(path.join(home, ...parts))).toThrow('invalid folder')
+      expect(() => store.vet(path.join(home, ...parts))).toThrow('invalid folder')
+    }
+    for (const parts of [
+      ['Novel'],
+      ['Documents', 'Novel'],
+      ['Library', 'Mobile Documents', 'com~apple~CloudDocs', 'Novel'],
+      ['Library', 'CloudStorage', 'Dropbox', 'Novel']
+    ]) {
+      expect(store.allow(path.join(home, ...parts))).toBe(path.join(home, ...parts))
+    }
+  })
+
   it('drops saved folders it would refuse to open', () => {
     const home = path.join(dir, 'home', 'me')
     const root = path.join(home, 'Novel')

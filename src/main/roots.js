@@ -45,6 +45,25 @@ function isWithin(child, parent) {
   return child === parent || child.startsWith(parent.endsWith(path.sep) ? parent : parent + path.sep)
 }
 
+// Folders under home that hold settings or start programs: any hidden folder
+// (.config, .ssh, .local), ~/Library, AppData and the PowerShell profile folders.
+// Verso never opens or creates a folder in one, even when the person picks it,
+// or the page could write a shell config or a login item there. Cloud drives on
+// macOS sit under ~/Library, so those two folders stay usable.
+const CLOUD_DRIVES = new Set(['mobile documents', 'cloudstorage'])
+const PROFILE_FOLDERS = new Set(['powershell', 'windowspowershell'])
+
+function inSettingsArea(real, home) {
+  if (real === home || !isWithin(real, home)) return false
+  const parts = path
+    .relative(home, real)
+    .split(path.sep)
+    .map((part) => part.toLowerCase().replace(/[. ]+$/, ''))
+  if (parts.some((part) => part.startsWith('.') || PROFILE_FOLDERS.has(part))) return true
+  if (parts[0] === 'appdata') return true
+  return parts[0] === 'library' && !CLOUD_DRIVES.has(parts[1])
+}
+
 // The folders the person picked in the open dialog or created through the app.
 // File and git requests from the page must stay inside one of them, so a script
 // that gets into the page cannot read or write anywhere else on the machine.
@@ -57,7 +76,7 @@ export function createRootStore(file, { home = os.homedir() } = {}) {
   const homeReal = realLocation(home)
   const ownFolder = realLocation(path.dirname(file))
   const tooWide = (real) => isWithin(homeReal, real) || isWithin(ownFolder, real) || isWithin(real, ownFolder)
-  const usable = (real) => !touchesGitDir(real) && !tooWide(real)
+  const usable = (real) => !touchesGitDir(real) && !tooWide(real) && !inSettingsArea(real, homeReal)
   let roots = []
   try {
     const saved = JSON.parse(fs.readFileSync(file, 'utf-8'))
@@ -138,9 +157,10 @@ export function createRootStore(file, { home = os.homedir() } = {}) {
   }
 }
 
-// Folders that run what is in them when they sit in the home or Documents
-// folder: PowerShell profiles, macOS launch agents, Linux autostart and the
-// Windows Startup folder. Hidden names (.ssh, .config) are refused separately.
+// Folder names that run what is in them: PowerShell profiles, macOS launch
+// agents, Linux autostart and the Windows Startup folder. Their usual places are
+// settings areas, which vet refuses; the name check also covers a parent that
+// is not under home, such as another drive.
 const RUNS_FILES = new Set(['powershell', 'windowspowershell', 'launchagents', 'launchdaemons', 'autostart', 'startup'])
 
 // A new project folder name must be a single plain name. The page picks it, so
