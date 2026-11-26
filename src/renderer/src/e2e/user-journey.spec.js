@@ -9,7 +9,7 @@ test.describe('Verso User Journey', () => {
   let page;
   // A fresh profile, so folders opened in the developer's own copy of the app
   // never count here.
-  const userData = fs.mkdtempSync(path.join(os.tmpdir(), 'verso-e2e-'));
+  const userData = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'verso-e2e-')));
 
   test.beforeAll(async () => {
     // Launch Electron app
