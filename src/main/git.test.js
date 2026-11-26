@@ -32,7 +32,7 @@ describe('git handlers', () => {
     git(outer, 'commit', '-q', '-m', 'outer')
     store = createRootStore(path.join(base, 'state', 'roots.json'))
     store.allow(project)
-    setupGitIPC(store)
+    setupGitIPC(store, { hooksPath: path.join(base, 'state', 'no-hooks') })
   })
   afterEach(() => fs.rmSync(base, { recursive: true, force: true }))
 
@@ -78,6 +78,44 @@ describe('git handlers', () => {
     expect(await call('git:diff', project, 'HEAD')).toBeNull()
     await expect(call('git:commit', project, 'x')).rejects.toThrow('not a git repository')
     expect(fs.existsSync(marker)).toBe(false)
+  })
+
+  it('refuses a repository whose git folder the page could write', async () => {
+    git(project, 'init', '-q', `--separate-git-dir=${path.join(project, 'notes')}`)
+    configure(project)
+    expect(await call('git:status', project)).toBeNull()
+    await expect(call('git:commit', project, 'x')).rejects.toThrow('not a git repository')
+  })
+
+  it('never runs hooks, even ones the repository points to', async () => {
+    const marker = path.join(base, 'hook-ran')
+    expect(await call('git:init', project)).toBe(true)
+    configure(project)
+    git(project, 'config', 'core.hooksPath', '.husky')
+    fs.mkdirSync(path.join(project, '.husky'))
+    for (const hook of ['pre-commit', 'prepare-commit-msg', 'commit-msg', 'post-commit', 'post-checkout']) {
+      fs.writeFileSync(path.join(project, '.husky', hook), `#!/bin/sh\necho ${hook} >> '${marker}'\n`, { mode: 0o755 })
+    }
+    fs.writeFileSync(path.join(project, 'one.md'), 'first\n')
+    expect(await call('git:add', project, 'one.md')).toBe(true)
+    expect(await call('git:commit', project, 'first')).toBe(true)
+    fs.writeFileSync(path.join(project, 'one.md'), 'second\n')
+    expect(await call('git:restore', project, 'one.md')).toBe(true)
+    expect(fs.readFileSync(path.join(project, 'one.md'), 'utf-8')).toBe('first\n')
+    expect(fs.existsSync(marker)).toBe(false)
+  })
+
+  it('restores only the file named, even when its name looks like a pattern', async () => {
+    expect(await call('git:init', project)).toBe(true)
+    configure(project)
+    const names = ['Chapter 1.md', 'Chapter [1].md']
+    for (const name of names) fs.writeFileSync(path.join(project, name), 'first\n')
+    expect(await call('git:add', project, '.')).toBe(true)
+    expect(await call('git:commit', project, 'first')).toBe(true)
+    for (const name of names) fs.writeFileSync(path.join(project, name), 'second\n')
+    expect(await call('git:restore', project, 'Chapter [1].md')).toBe(true)
+    expect(fs.readFileSync(path.join(project, 'Chapter [1].md'), 'utf-8')).toBe('first\n')
+    expect(fs.readFileSync(path.join(project, 'Chapter 1.md'), 'utf-8')).toBe('second\n')
   })
 
   it('works inside the project and refuses files outside it', async () => {

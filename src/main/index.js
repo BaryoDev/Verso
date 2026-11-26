@@ -56,8 +56,10 @@ app.whenReady().then(() => {
   // Setup our File System IPC
   const roots = createRootStore(join(app.getPath('userData'), 'allowed-roots.json'))
   setupIPC(roots);
-  // Setup Git IPC
-  setupGitIPC(roots);
+  // Git runs with hooks taken from a folder that holds none. It sits next to
+  // the opened-folder list, which no opened folder may hold or sit in, so the
+  // page can never put a hook there.
+  setupGitIPC(roots, { hooksPath: join(app.getPath('userData'), 'no-hooks') });
 
   createWindow()
 

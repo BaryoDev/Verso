@@ -98,6 +98,40 @@ describe('createRootStore', () => {
     expect(() => store.allow(path.join(root, 'alias'))).toThrow('invalid folder')
   })
 
+  it('refuses a path through an entry named .git even when it links to a plain folder', () => {
+    const store = createRootStore(file)
+    const root = path.join(dir, 'Novel')
+    fs.mkdirSync(path.join(root, 'notes'), { recursive: true })
+    fs.symlinkSync(path.join(root, 'notes'), path.join(root, '.git'))
+    store.allow(root)
+    expect(() => store.check(path.join(root, '.git', 'config'))).toThrow('outside the opened folders')
+  })
+
+  it('never opens an entry named .git, even one that links to a plain folder', () => {
+    const store = createRootStore(file)
+    const root = path.join(dir, 'Novel')
+    fs.mkdirSync(path.join(root, 'notes'), { recursive: true })
+    fs.symlinkSync(path.join(root, 'notes'), path.join(root, '.git'))
+    expect(() => store.allow(path.join(root, '.git'))).toThrow('invalid folder')
+  })
+
+  it('gives the same answer for an unreadable outside folder as for any outside path', () => {
+    const store = createRootStore(file)
+    const root = path.join(dir, 'Novel')
+    const locked = path.join(root, 'locked')
+    fs.mkdirSync(locked, { recursive: true })
+    fs.symlinkSync(path.join(dir, 'b'), path.join(dir, 'a'))
+    fs.symlinkSync(path.join(dir, 'a'), path.join(dir, 'b'))
+    store.allow(root)
+    expect(() => store.check(path.join(dir, 'a', 'x.md'))).toThrow('outside the opened folders')
+    fs.chmodSync(locked, 0)
+    try {
+      expect(() => store.check(path.join(locked, 'x.md'))).toThrow('cannot read this folder')
+    } finally {
+      fs.chmodSync(locked, 0o755)
+    }
+  })
+
   it('never opens the home folder, a folder above it, or its own folder', () => {
     const home = path.join(dir, 'home', 'me')
     const store = createRootStore(file, { home })
@@ -134,7 +168,27 @@ describe('checkProjectName', () => {
     expect(checkProjectName(name)).toBe(name)
   })
 
-  it.each(['', ' ', '.', '..', '../escape', 'a/b', 'a\\b', '.git', '.Git', null])('refuses %s', (name) => {
+  it.each([
+    '',
+    ' ',
+    '.',
+    '..',
+    '../escape',
+    'a/b',
+    'a\\b',
+    'a:b',
+    '.git',
+    '.Git',
+    '.ssh',
+    '.config',
+    'PowerShell',
+    'WindowsPowerShell',
+    'powershell. ',
+    'LaunchAgents',
+    'autostart',
+    'Startup',
+    null
+  ])('refuses %s', (name) => {
     expect(() => checkProjectName(name)).toThrow('invalid project name')
   })
 })

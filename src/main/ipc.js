@@ -95,6 +95,7 @@ export function setupIPC(roots) {
 
   // Create Project
   ipcMain.handle('fs:createProject', async (_, { parentPath, projectName, type, author } = {}) => {
+    let made = null;
     try {
       const parent = chosenParent;
       chosenParent = null;
@@ -106,6 +107,7 @@ export function setupIPC(roots) {
       // 1. Create Project Root. Not recursive, so an existing folder or link of
       // that name is refused instead of written through.
       await fs.mkdir(projectPath);
+      made = projectPath;
 
       // 2. Create verso.config.json
       const config = {
@@ -148,6 +150,9 @@ export function setupIPC(roots) {
 
       return roots.allow(projectPath);
     } catch (error) {
+      // Take back a folder this call made but could not finish, so trying again
+      // with the same name works. Nothing else can be in it yet.
+      if (made) await fs.rm(made, { recursive: true, force: true }).catch(() => {});
       console.error('fs:createProject error:', error);
       throw error;
     }

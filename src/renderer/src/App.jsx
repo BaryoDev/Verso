@@ -112,11 +112,15 @@ function App() {
       try {
         await loadProjectFiles(path);
       } catch (error) {
-        // Folders from an older version, or ones never opened here, are refused
-        // until the person opens them once with Open Folder.
         console.error('Failed to load project:', error);
-        forgetRecent(path);
-        alert('Open this folder again with Open Folder. Verso only reads folders you open there.');
+        if (String(error?.message).includes('outside the opened folders')) {
+          // Folders from an older version, or ones never opened here, are
+          // refused until the person opens them once with Open Folder.
+          forgetRecent(path);
+          alert('Open this folder again with Open Folder. Verso only reads folders you open there.');
+        } else {
+          alert('Verso could not read this folder. Check that it is still there and that you can open it.');
+        }
         return;
       }
       setCurrentProject(path);
@@ -260,29 +264,36 @@ function App() {
     const api = getFileApi();
     if (!api) return;
 
+    let newProjectPath;
     try {
       const parentPath = await api.chooseParent();
       if (!parentPath) return;
 
-      const newProjectPath = await api.createProject({
+      newProjectPath = await api.createProject({
         parentPath,
         projectName: name,
         type,
         author: 'User'
       });
-
-      if (newProjectPath) {
-        await loadProjectFiles(newProjectPath);
-        setCurrentProject(newProjectPath);
-        addToRecents({
-          path: newProjectPath,
-          name: name,
-          type: type
-        });
-      }
     } catch (error) {
       console.error("Failed to create project:", error);
-      alert(`Could not create "${name}". A file or folder with that name may already be there.`);
+      alert(
+        String(error?.message).includes('invalid project name')
+          ? `"${name}" cannot be a project name. Names cannot start with a dot, hold a slash or colon, or be a folder the system runs files from.`
+          : `Could not create "${name}". A file or folder with that name may already be there.`
+      );
+      return;
+    }
+    if (!newProjectPath) return;
+
+    // The project exists now, so keep it in recents even if opening it fails.
+    addToRecents({ path: newProjectPath, name, type });
+    try {
+      await loadProjectFiles(newProjectPath);
+      setCurrentProject(newProjectPath);
+    } catch (error) {
+      console.error('Failed to open the new project:', error);
+      alert(`"${name}" was created but could not be opened. Open it from your recent projects.`);
     }
   };
 

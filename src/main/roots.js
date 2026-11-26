@@ -98,8 +98,21 @@ export function createRootStore(file, { home = os.homedir() } = {}) {
 
   function check(target) {
     if (typeof target !== 'string' || target === '') throw new Error(OUTSIDE)
-    const real = realLocation(target)
-    if (touchesGitDir(path.resolve(target)) || touchesGitDir(real)) throw new Error(OUTSIDE)
+    const asked = path.resolve(target)
+    if (touchesGitDir(asked)) throw new Error(OUTSIDE)
+    let real
+    try {
+      real = realLocation(target)
+    } catch (error) {
+      // A folder that cannot be read (no permission, a link loop) gives the same
+      // answer as any other outside path, so the page cannot use the error to
+      // learn which folders exist outside or who may read them.
+      if (error.message !== OUTSIDE && roots.some((root) => isWithin(asked, root))) {
+        throw new Error('cannot read this folder')
+      }
+      throw new Error(OUTSIDE)
+    }
+    if (touchesGitDir(real)) throw new Error(OUTSIDE)
     if (!roots.some((root) => isWithin(real, root))) throw new Error(OUTSIDE)
     return real
   }
@@ -125,16 +138,20 @@ export function createRootStore(file, { home = os.homedir() } = {}) {
   }
 }
 
-// A new project folder name must be a single plain name.
+// Folders that run what is in them when they sit in the home or Documents
+// folder: PowerShell profiles, macOS launch agents, Linux autostart and the
+// Windows Startup folder. Hidden names (.ssh, .config) are refused separately.
+const RUNS_FILES = new Set(['powershell', 'windowspowershell', 'launchagents', 'launchdaemons', 'autostart', 'startup'])
+
+// A new project folder name must be a single plain name. The page picks it, so
+// it is never hidden and never a folder the system runs files from, or a
+// person who chose their home folder would hand the page ~/.ssh.
 export function checkProjectName(name) {
-  if (
-    typeof name !== 'string' ||
-    name.trim() === '' ||
-    name === '.' ||
-    name === '..' ||
-    /[/\\]/.test(name) ||
-    touchesGitDir(name)
-  ) {
+  if (typeof name !== 'string' || name.trim() === '' || /[/\\:]/.test(name) || name.startsWith('.')) {
+    throw new Error('invalid project name')
+  }
+  // Windows drops trailing dots and spaces, so "PowerShell." is PowerShell.
+  if (RUNS_FILES.has(name.toLowerCase().replace(/[. ]+$/, '')) || touchesGitDir(name)) {
     throw new Error('invalid project name')
   }
   return name

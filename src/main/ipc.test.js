@@ -1,5 +1,6 @@
 // @vitest-environment node
 import fs from 'fs'
+import fsp from 'fs/promises'
 import os from 'os'
 import path from 'path'
 import { createRootStore } from './roots'
@@ -59,6 +60,21 @@ describe('file handlers', () => {
     expect(await call('fs:readFile', path.join(book, 'Chapters', 'Chapter 1.md'))).toContain('Chapter 1')
     await expect(call('fs:readFile', path.join(home, 'notes.md'))).rejects.toThrow('outside the opened folders')
     await expect(call('fs:createProject', { ...details, projectName: 'Second' })).rejects.toThrow('choose where')
+  })
+
+  it('takes back a project it could not finish, so the name can be used again', async () => {
+    const details = { parentPath: home, projectName: 'Book', type: 'novel' }
+    pick(home)
+    await call('dialog:chooseParent')
+    const write = vi.spyOn(fsp, 'writeFile').mockRejectedValueOnce(new Error('disk full'))
+    try {
+      await expect(call('fs:createProject', details)).rejects.toThrow('disk full')
+    } finally {
+      write.mockRestore()
+    }
+    expect(fs.existsSync(path.join(home, 'Book'))).toBe(false)
+    await call('dialog:chooseParent')
+    expect(await call('fs:createProject', details)).toBe(path.join(home, 'Book'))
   })
 
   it('forgets the chosen place when the dialog is cancelled', async () => {
