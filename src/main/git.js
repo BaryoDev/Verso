@@ -1,5 +1,6 @@
 import { ipcMain } from 'electron';
 import { simpleGit } from 'simple-git';
+import { checkRevision, pathArgs } from './safety';
 
 export function setupGitIPC() {
   // Initialize git instance for a specific path on each request or cache?
@@ -28,7 +29,7 @@ export function setupGitIPC() {
   // Stage changes
   ipcMain.handle('git:add', async (_, projectPath, files) => {
       const git = simpleGit(projectPath);
-      await git.add(files); // files can be '.' or array
+      await git.add(pathArgs(files)); // files can be '.' or array
       return true;
   });
 
@@ -61,7 +62,7 @@ export function setupGitIPC() {
   ipcMain.handle('git:diff', async (_, projectPath, filePath) => {
       try {
           const git = simpleGit(projectPath);
-          const diff = await git.diff([filePath]); 
+          const diff = await git.diff(pathArgs(filePath));
           return diff;
       } catch (e) {
           console.error('git:diff error', e);
@@ -73,7 +74,7 @@ export function setupGitIPC() {
   ipcMain.handle('git:getFileAtRevision', async (_, projectPath, filePath, revision = 'HEAD') => {
       try {
           const git = simpleGit(projectPath);
-          const content = await git.show([`${revision}:${filePath}`]);
+          const content = await git.show([`${checkRevision(revision)}:${filePath}`]);
           return content;
       } catch (e) {
           console.error('git:getFileAtRevision error', e);
@@ -85,7 +86,7 @@ export function setupGitIPC() {
   ipcMain.handle('git:restore', async (_, projectPath, filePath) => {
       try {
           const git = simpleGit(projectPath);
-          await git.checkout([filePath]); // or 'restore' if git version supports it, checkout is safer for older git
+          await git.checkout(pathArgs(filePath)); // or 'restore' if git version supports it, checkout is safer for older git
           return true;
       } catch (e) {
           console.error('git:restore error', e);
