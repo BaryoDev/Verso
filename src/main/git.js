@@ -1,103 +1,116 @@
 import { ipcMain } from 'electron';
+import fs from 'fs';
+import path from 'path';
 import { simpleGit } from 'simple-git';
 import { checkRevision, pathArgs } from './safety';
 
+// Git runs only on a repository whose top is the opened folder itself. Without
+// this, a folder with no repository of its own would make git use one in a
+// parent folder (a home folder, say), and commit, push or restore there.
+async function repoAt(roots, projectPath) {
+  const dir = roots.check(projectPath);
+  const git = simpleGit(dir);
+  const top = (await git.revparse(['--show-toplevel'])).trim();
+  if (fs.realpathSync.native(top) !== dir) throw new Error('not a git repository');
+  return { git, dir };
+}
+
+// File arguments from the page: each must be inside the project. They go to git
+// as "./relative" so a leading ":" is never read as pathspec magic.
+function projectFiles(roots, dir, files) {
+  const list = [].concat(files);
+  if (list.length === 0) throw new Error('invalid path');
+  return list.map((file) => {
+    if (typeof file !== 'string' || file === '') throw new Error('invalid path');
+    const rel = path.relative(dir, roots.check(path.resolve(dir, file)));
+    if (rel === '..' || rel.startsWith('..' + path.sep) || path.isAbsolute(rel)) {
+      throw new Error('path is outside the project');
+    }
+    return rel === '' ? '.' : './' + rel.split(path.sep).join('/');
+  });
+}
+
 export function setupGitIPC(roots) {
-  // Initialize git instance for a specific path on each request or cache?
-  // simpleGit(path) creates an instance.
-  
-  // Get Status
   ipcMain.handle('git:status', async (_, projectPath) => {
     try {
-      const git = simpleGit(roots.check(projectPath));
+      const { git } = await repoAt(roots, projectPath);
       const status = await git.status();
-      // Ensure we have a plain object. 
-      // simple-git status object contains prototypes/methods which break IPC.
-      // JSON stringify/parse is the safest way to strip them.
+      // simple-git status objects carry methods that cannot cross IPC.
       if (!status) return null;
       return JSON.parse(JSON.stringify(status));
     } catch (error) {
       // Suppress logging for non-git repositories to avoid console spam
       if (typeof error.message === 'string' && error.message.includes('not a git repository')) {
-        return null; 
+        return null;
       }
       console.error('git:status error:', error);
       return null;
     }
   });
 
-  // Stage changes
   ipcMain.handle('git:add', async (_, projectPath, files) => {
-      const git = simpleGit(roots.check(projectPath));
-      await git.add(pathArgs(files)); // files can be '.' or array
-      return true;
+    const { git, dir } = await repoAt(roots, projectPath);
+    await git.add(pathArgs(projectFiles(roots, dir, files)));
+    return true;
   });
 
-  // Commit
   ipcMain.handle('git:commit', async (_, projectPath, message) => {
-      const git = simpleGit(roots.check(projectPath));
-      await git.commit(message);
-      return true;
+    const { git } = await repoAt(roots, projectPath);
+    await git.commit(message);
+    return true;
   });
 
-  // Push
   ipcMain.handle('git:push', async (_, projectPath) => {
-      const git = simpleGit(roots.check(projectPath));
-      await git.push();
-      return true;
+    const { git } = await repoAt(roots, projectPath);
+    await git.push();
+    return true;
   });
-  
-  // Log (History)
+
   ipcMain.handle('git:log', async (_, projectPath) => {
-      try {
-        const git = simpleGit(roots.check(projectPath));
-        const log = await git.log();
-        return log;
-      } catch (e) {
-          return null;
-      }
+    try {
+      const { git } = await repoAt(roots, projectPath);
+      return await git.log();
+    } catch {
+      return null;
+    }
   });
-  
-  // Diff (File)
+
   ipcMain.handle('git:diff', async (_, projectPath, filePath) => {
-      try {
-          const git = simpleGit(roots.check(projectPath));
-          const diff = await git.diff(pathArgs(filePath));
-          return diff;
-      } catch (e) {
-          console.error('git:diff error', e);
-          return null;
-      }
+    try {
+      const { git, dir } = await repoAt(roots, projectPath);
+      return await git.diff(pathArgs(projectFiles(roots, dir, filePath)));
+    } catch (e) {
+      console.error('git:diff error', e);
+      return null;
+    }
   });
 
-  // Get File Content at Revision (e.g. HEAD)
   ipcMain.handle('git:getFileAtRevision', async (_, projectPath, filePath, revision = 'HEAD') => {
-      try {
-          const git = simpleGit(roots.check(projectPath));
-          const content = await git.show([`${checkRevision(revision)}:${filePath}`]);
-          return content;
-      } catch (e) {
-          console.error('git:getFileAtRevision error', e);
-          return null;
-      }
-  });
-  
-  // Restore (Discard Changes)
-  ipcMain.handle('git:restore', async (_, projectPath, filePath) => {
-      try {
-          const git = simpleGit(roots.check(projectPath));
-          await git.checkout(pathArgs(filePath)); // or 'restore' if git version supports it, checkout is safer for older git
-          return true;
-      } catch (e) {
-          console.error('git:restore error', e);
-          return false;
-      }
+    try {
+      const { git, dir } = await repoAt(roots, projectPath);
+      const [file] = projectFiles(roots, dir, filePath);
+      return await git.show([`${checkRevision(revision)}:${file}`]);
+    } catch (e) {
+      console.error('git:getFileAtRevision error', e);
+      return null;
+    }
   });
 
-  // Init
-  ipcMain.handle('git:init', async (_, projectPath) => {
-      const git = simpleGit(roots.check(projectPath));
-      await git.init();
+  // Restore (discard changes). checkout works on older git than restore does.
+  ipcMain.handle('git:restore', async (_, projectPath, filePath) => {
+    try {
+      const { git, dir } = await repoAt(roots, projectPath);
+      await git.checkout(pathArgs(projectFiles(roots, dir, filePath)));
       return true;
+    } catch (e) {
+      console.error('git:restore error', e);
+      return false;
+    }
+  });
+
+  // Init runs in the opened folder itself, so it needs no existing repository.
+  ipcMain.handle('git:init', async (_, projectPath) => {
+    await simpleGit(roots.check(projectPath)).init();
+    return true;
   });
 }
