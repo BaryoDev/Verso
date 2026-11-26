@@ -11,7 +11,7 @@ import { checkRevision, pathArgs } from './safety';
 // can run programs. Git checks .git before either, and page code can never
 // create a .git entry, so its presence means git uses the person's repository.
 async function repoAt(roots, projectPath) {
-  const dir = roots.check(projectPath);
+  const dir = roots.checkRoot(projectPath);
   try {
     fs.lstatSync(path.join(dir, '.git'));
   } catch {
@@ -118,7 +118,7 @@ export function setupGitIPC(roots) {
 
   // Init runs in the opened folder itself, so it needs no existing repository.
   ipcMain.handle('git:init', async (_, projectPath) => {
-    await simpleGit(roots.check(projectPath)).init();
+    await simpleGit(roots.checkRoot(projectPath)).init();
     return true;
   });
 }

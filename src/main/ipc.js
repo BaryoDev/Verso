@@ -39,6 +39,11 @@ async function readDirRecursive(dirPath, rootPath = null) {
 }
 
 export function setupIPC(roots) {
+  // Where the person chose to put a new project. It is good for one
+  // createProject call and is never opened itself, so choosing a parent such as
+  // the home folder does not give the page that folder.
+  let chosenParent = null;
+
   // Open Directory Dialog
   ipcMain.handle('dialog:openDirectory', async () => {
     const { canceled, filePaths } = await dialog.showOpenDialog({
@@ -48,10 +53,21 @@ export function setupIPC(roots) {
     return roots.allow(filePaths[0]); // Return the path string
   });
 
-  // Read Directory (Recursive)
+  ipcMain.handle('dialog:chooseParent', async () => {
+    chosenParent = null;
+    const { canceled, filePaths } = await dialog.showOpenDialog({
+      properties: ['openDirectory', 'createDirectory']
+    });
+    if (canceled) return null;
+    chosenParent = await fs.realpath(filePaths[0]);
+    return chosenParent;
+  });
+
+  // Read Directory (Recursive). A folder that was never opened is refused, so
+  // the page can tell the person to open it again.
   ipcMain.handle('fs:readDir', async (_, dirPath) => {
+    dirPath = roots.check(dirPath);
     try {
-      dirPath = roots.check(dirPath);
       const children = await readDirRecursive(dirPath);
       // Return as a root node
       return [{
@@ -78,12 +94,18 @@ export function setupIPC(roots) {
   });
 
   // Create Project
-  ipcMain.handle('fs:createProject', async (_, { parentPath, projectName, type, author }) => {
+  ipcMain.handle('fs:createProject', async (_, { parentPath, projectName, type, author } = {}) => {
     try {
-      const projectPath = path.join(roots.check(parentPath), checkProjectName(projectName));
-      
-      // 1. Create Project Root
-      await fs.mkdir(projectPath, { recursive: true });
+      const parent = chosenParent;
+      chosenParent = null;
+      if (!parent || typeof parentPath !== 'string' || path.resolve(parentPath) !== parent) {
+        throw new Error('choose where to put the project first');
+      }
+      const projectPath = roots.vet(path.join(parent, checkProjectName(projectName)));
+
+      // 1. Create Project Root. Not recursive, so an existing folder or link of
+      // that name is refused instead of written through.
+      await fs.mkdir(projectPath);
 
       // 2. Create verso.config.json
       const config = {

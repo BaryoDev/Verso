@@ -5,6 +5,7 @@ import { contextBridge, ipcRenderer } from 'electron'
 const api = {
   files: {
     openDirectory: () => ipcRenderer.invoke('dialog:openDirectory'),
+    chooseParent: () => ipcRenderer.invoke('dialog:chooseParent'),
     readDir: (path) => ipcRenderer.invoke('fs:readDir', path),
     readFile: (path) => ipcRenderer.invoke('fs:readFile', path),
     saveFile: (path, content) => ipcRenderer.invoke('fs:writeFile', path, content),

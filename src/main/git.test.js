@@ -30,7 +30,7 @@ describe('git handlers', () => {
     fs.writeFileSync(path.join(outer, 'secret.md'), 'outer secret\n')
     git(outer, 'add', 'secret.md')
     git(outer, 'commit', '-q', '-m', 'outer')
-    store = createRootStore(path.join(base, 'roots.json'))
+    store = createRootStore(path.join(base, 'state', 'roots.json'))
     store.allow(project)
     setupGitIPC(store)
   })
@@ -43,6 +43,27 @@ describe('git handlers', () => {
     expect(await call('git:restore', project, ':/')).toBe(false)
     await expect(call('git:commit', project, 'x')).rejects.toThrow()
     expect(fs.readFileSync(path.join(outer, 'secret.md'), 'utf-8')).toBe('changed\n')
+  })
+
+  it('never falls back to the parent repository when the folder has a broken .git', async () => {
+    fs.mkdirSync(path.join(project, '.git'))
+    fs.writeFileSync(path.join(outer, 'secret.md'), 'changed\n')
+    expect(await call('git:status', project)).toBeNull()
+    await expect(call('git:commit', project, 'x')).rejects.toThrow('not a git repository')
+    expect(git(outer, 'status', '--porcelain')).toContain('secret.md')
+  })
+
+  it('leaves alone a repository kept inside the opened folder', async () => {
+    const inner = path.join(project, 'other')
+    fs.mkdirSync(inner)
+    git(inner, 'init', '-q')
+    configure(inner)
+    fs.writeFileSync(path.join(inner, 'a.md'), 'a\n')
+    expect(await call('git:status', inner)).toBeNull()
+    await expect(call('git:add', inner, 'a.md')).rejects.toThrow('not an opened folder')
+    await expect(call('git:commit', inner, 'x')).rejects.toThrow('not an opened folder')
+    await expect(call('git:init', path.join(project, 'sub'))).rejects.toThrow('not an opened folder')
+    expect(git(inner, 'status', '--porcelain')).toContain('a.md')
   })
 
   it('never treats files the page wrote as a repository', async () => {
@@ -70,7 +91,10 @@ describe('git handlers', () => {
     expect(await call('git:getFileAtRevision', project, path.join(project, 'one.md'), 'HEAD')).toBe('first\n')
     expect(await call('git:getFileAtRevision', project, 'one.md', 'HEAD')).toBe('first\n')
     expect(await call('git:getFileAtRevision', project, '../secret.md', 'HEAD')).toBeNull()
-    expect(await call('git:getFileAtRevision', project, 'one.md', '--output=/tmp/x')).toBeNull()
+    const out = path.join(base, 'out')
+    fs.mkdirSync(out + ':.')
+    expect(await call('git:getFileAtRevision', project, 'one.md', `--output=${out}`)).toBeNull()
+    expect(fs.existsSync(path.join(out + ':.', 'one.md'))).toBe(false)
 
     expect(await call('git:diff', project, 'one.md')).toContain('+second')
     expect(await call('git:diff', project, ':(top)one.md')).toBe('')

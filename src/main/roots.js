@@ -1,4 +1,5 @@
 import fs from 'fs'
+import os from 'os'
 import path from 'path'
 
 const OUTSIDE = 'path is outside the opened folders'
@@ -40,17 +41,29 @@ function realLocation(target) {
   }
 }
 
+function isWithin(child, parent) {
+  return child === parent || child.startsWith(parent.endsWith(path.sep) ? parent : parent + path.sep)
+}
+
 // The folders the person picked in the open dialog or created through the app.
 // File and git requests from the page must stay inside one of them, so a script
 // that gets into the page cannot read or write anywhere else on the machine.
 // The list lives in the main process and is never taken from the page.
-export function createRootStore(file) {
+//
+// A folder that holds the home folder is never one of them: the page could then
+// write the git config or login items, which run programs. Neither is a folder
+// that holds this list or sits inside it, or the page could add any folder.
+export function createRootStore(file, { home = os.homedir() } = {}) {
+  const homeReal = realLocation(home)
+  const ownFolder = realLocation(path.dirname(file))
+  const tooWide = (real) => isWithin(homeReal, real) || isWithin(ownFolder, real) || isWithin(real, ownFolder)
+  const usable = (real) => !touchesGitDir(real) && !tooWide(real)
   let roots = []
   try {
     const saved = JSON.parse(fs.readFileSync(file, 'utf-8'))
     if (Array.isArray(saved)) {
       roots = saved
-        .filter((r) => typeof r === 'string' && path.isAbsolute(r) && !touchesGitDir(r))
+        .filter((r) => typeof r === 'string' && path.isAbsolute(r))
         .flatMap((r) => {
           try {
             return [realLocation(r)]
@@ -58,6 +71,7 @@ export function createRootStore(file) {
             return []
           }
         })
+        .filter(usable)
     }
   } catch {
     roots = []
@@ -72,27 +86,40 @@ export function createRootStore(file) {
     }
   }
 
+  // Where a folder would land if it were allowed, or an error if it never can be.
+  function vet(dir) {
+    if (typeof dir !== 'string' || dir === '' || touchesGitDir(path.resolve(dir))) {
+      throw new Error('invalid folder')
+    }
+    const real = realLocation(dir)
+    if (!usable(real)) throw new Error('invalid folder')
+    return real
+  }
+
+  function check(target) {
+    if (typeof target !== 'string' || target === '') throw new Error(OUTSIDE)
+    const real = realLocation(target)
+    if (touchesGitDir(path.resolve(target)) || touchesGitDir(real)) throw new Error(OUTSIDE)
+    if (!roots.some((root) => isWithin(real, root))) throw new Error(OUTSIDE)
+    return real
+  }
+
   return {
+    vet,
+    check,
     allow(dir) {
-      if (typeof dir !== 'string' || dir === '' || touchesGitDir(path.resolve(dir))) {
-        throw new Error('invalid folder')
-      }
-      const real = realLocation(dir)
-      if (touchesGitDir(real)) throw new Error('invalid folder')
+      const real = vet(dir)
       if (!roots.includes(real)) {
         roots.push(real)
         save()
       }
       return real
     },
-    check(target) {
-      if (typeof target !== 'string' || target === '') throw new Error(OUTSIDE)
-      const real = realLocation(target)
-      if (touchesGitDir(path.resolve(target)) || touchesGitDir(real)) throw new Error(OUTSIDE)
-      const inside = roots.some(
-        (root) => real === root || real.startsWith(root.endsWith(path.sep) ? root : root + path.sep)
-      )
-      if (!inside) throw new Error(OUTSIDE)
+    // An opened folder itself, not a folder inside one. Git works only here, so
+    // a repository the person keeps inside an opened folder is never touched.
+    checkRoot(target) {
+      const real = check(target)
+      if (!roots.includes(real)) throw new Error('not an opened folder')
       return real
     }
   }

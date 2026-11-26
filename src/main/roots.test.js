@@ -70,6 +70,8 @@ describe('createRootStore', () => {
     ['.git.', 'config'],
     ['GIT~1', 'config'],
     ['sub', '.git'],
+    ['.git::$INDEX_ALLOCATION', 'config'],
+    ['.git ', 'config'],
     ['.git']
   ])('refuses git internals at %s', (...parts) => {
     const store = createRootStore(file)
@@ -86,10 +88,44 @@ describe('createRootStore', () => {
     expect(() => store.allow(path.join(root, '.git'))).toThrow('invalid folder')
   })
 
-  it('handles a disk root picked in the dialog', () => {
+  it('refuses a .git folder reached through a link', () => {
     const store = createRootStore(file)
-    store.allow('/')
-    expect(store.check('/Volumes/Book/a.md')).toBe('/Volumes/Book/a.md')
+    const root = path.join(dir, 'Novel')
+    fs.mkdirSync(path.join(root, '.git'), { recursive: true })
+    fs.symlinkSync(path.join(root, '.git'), path.join(root, 'alias'))
+    store.allow(root)
+    expect(() => store.check(path.join(root, 'alias', 'config'))).toThrow('outside the opened folders')
+    expect(() => store.allow(path.join(root, 'alias'))).toThrow('invalid folder')
+  })
+
+  it('never opens the home folder, a folder above it, or its own folder', () => {
+    const home = path.join(dir, 'home', 'me')
+    const store = createRootStore(file, { home })
+    for (const wide of [home, path.join(dir, 'home'), dir, '/', path.dirname(file), path.join(path.dirname(file), 'x')]) {
+      expect(() => store.allow(wide)).toThrow('invalid folder')
+    }
+    expect(store.allow(path.join(home, 'Novel'))).toBe(path.join(home, 'Novel'))
+    expect(() => createRootStore(file).allow(os.homedir())).toThrow('invalid folder')
+  })
+
+  it('drops saved folders it would refuse to open', () => {
+    const home = path.join(dir, 'home', 'me')
+    const root = path.join(home, 'Novel')
+    fs.mkdirSync(path.dirname(file), { recursive: true })
+    fs.writeFileSync(file, JSON.stringify([home, '/', root]))
+    const store = createRootStore(file, { home })
+    expect(store.check(path.join(root, 'a.md'))).toBe(path.join(root, 'a.md'))
+    expect(() => store.check(path.join(home, '.gitconfig'))).toThrow('outside the opened folders')
+    expect(() => store.check('/etc/hosts')).toThrow('outside the opened folders')
+  })
+
+  it('tells an opened folder from a folder inside one', () => {
+    const store = createRootStore(file)
+    const root = path.join(dir, 'Novel')
+    store.allow(root)
+    expect(store.checkRoot(root)).toBe(root)
+    expect(() => store.checkRoot(path.join(root, 'other-repo'))).toThrow('not an opened folder')
+    expect(() => store.checkRoot(path.join(dir, 'outside'))).toThrow('outside the opened folders')
   })
 })
 

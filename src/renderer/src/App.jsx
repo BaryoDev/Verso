@@ -74,6 +74,14 @@ function App() {
     });
   };
 
+  const forgetRecent = (path) => {
+    setRecentProjects(prev => {
+      const updated = prev.filter(p => p.path !== path);
+      localStorage.setItem('verso_recents', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
   // Helper for Testing
   const getFileApi = () => {
     return window.__test_api || window.api?.files;
@@ -91,14 +99,29 @@ function App() {
     if (actionOrPath === 'existing') {
       const api = getFileApi();
       if (!api) { console.error('No File API found'); return; }
-      path = await api.openDirectory();
+      try {
+        path = await api.openDirectory();
+      } catch (error) {
+        console.error('Failed to open folder:', error);
+        alert('That folder cannot be opened as a project. Choose the folder that holds the project itself, not your home folder or a folder above it.');
+        return;
+      }
     }
 
     if (path) {
+      try {
+        await loadProjectFiles(path);
+      } catch (error) {
+        // Folders from an older version, or ones never opened here, are refused
+        // until the person opens them once with Open Folder.
+        console.error('Failed to load project:', error);
+        forgetRecent(path);
+        alert('Open this folder again with Open Folder. Verso only reads folders you open there.');
+        return;
+      }
       setCurrentProject(path);
       addToRecents(path);
       setView('editor');
-      loadProjectFiles(path);
     }
   };
 
@@ -237,10 +260,10 @@ function App() {
     const api = getFileApi();
     if (!api) return;
 
-    const parentPath = await api.openDirectory();
-    if (!parentPath) return;
-
     try {
+      const parentPath = await api.chooseParent();
+      if (!parentPath) return;
+
       const newProjectPath = await api.createProject({
         parentPath,
         projectName: name,
@@ -259,6 +282,7 @@ function App() {
       }
     } catch (error) {
       console.error("Failed to create project:", error);
+      alert(`Could not create "${name}". A file or folder with that name may already be there.`);
     }
   };
 
