@@ -1,5 +1,5 @@
 import { ipcMain } from 'electron';
-import simpleGit from 'simple-git';
+import { simpleGit } from 'simple-git';
 
 export function setupGitIPC() {
   // Initialize git instance for a specific path on each request or cache?
