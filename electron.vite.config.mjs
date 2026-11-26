@@ -4,7 +4,12 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   main: {},
-  preload: {},
+  // Bundled, because a sandboxed preload can load only electron itself.
+  preload: {
+    build: {
+      externalizeDeps: { exclude: ['@electron-toolkit/preload'] }
+    }
+  },
   renderer: {
     resolve: {
       alias: {

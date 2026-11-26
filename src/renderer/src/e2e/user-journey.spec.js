@@ -21,6 +21,22 @@ test.describe('Verso User Journey', () => {
     page.on('console', msg => console.log(`[Browser Console]: ${msg.text()}`));
   });
 
+  test('page code has no Node access and reaches files only through the preload bridge', async () => {
+    await page.waitForLoadState('load');
+    const seen = await page.evaluate(() => ({
+      require: typeof window.require,
+      process: typeof window.process,
+      readFile: typeof window.api?.files?.readFile,
+      gitStatus: typeof window.api?.git?.status
+    }));
+    expect(seen).toEqual({
+      require: 'undefined',
+      process: 'undefined',
+      readFile: 'function',
+      gitStatus: 'function'
+    });
+  });
+
   test('can navigate from dashboard to editor and back', async () => {
     // 1. Check Dashboard Load
     await expect(page.locator('text=Good afternoon, Author')).toBeVisible();
