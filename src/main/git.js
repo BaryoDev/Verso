@@ -2,14 +2,14 @@ import { ipcMain } from 'electron';
 import { simpleGit } from 'simple-git';
 import { checkRevision, pathArgs } from './safety';
 
-export function setupGitIPC() {
+export function setupGitIPC(roots) {
   // Initialize git instance for a specific path on each request or cache?
   // simpleGit(path) creates an instance.
   
   // Get Status
   ipcMain.handle('git:status', async (_, projectPath) => {
     try {
-      const git = simpleGit(projectPath);
+      const git = simpleGit(roots.check(projectPath));
       const status = await git.status();
       // Ensure we have a plain object. 
       // simple-git status object contains prototypes/methods which break IPC.
@@ -28,21 +28,21 @@ export function setupGitIPC() {
 
   // Stage changes
   ipcMain.handle('git:add', async (_, projectPath, files) => {
-      const git = simpleGit(projectPath);
+      const git = simpleGit(roots.check(projectPath));
       await git.add(pathArgs(files)); // files can be '.' or array
       return true;
   });
 
   // Commit
   ipcMain.handle('git:commit', async (_, projectPath, message) => {
-      const git = simpleGit(projectPath);
+      const git = simpleGit(roots.check(projectPath));
       await git.commit(message);
       return true;
   });
 
   // Push
   ipcMain.handle('git:push', async (_, projectPath) => {
-      const git = simpleGit(projectPath);
+      const git = simpleGit(roots.check(projectPath));
       await git.push();
       return true;
   });
@@ -50,7 +50,7 @@ export function setupGitIPC() {
   // Log (History)
   ipcMain.handle('git:log', async (_, projectPath) => {
       try {
-        const git = simpleGit(projectPath);
+        const git = simpleGit(roots.check(projectPath));
         const log = await git.log();
         return log;
       } catch (e) {
@@ -61,7 +61,7 @@ export function setupGitIPC() {
   // Diff (File)
   ipcMain.handle('git:diff', async (_, projectPath, filePath) => {
       try {
-          const git = simpleGit(projectPath);
+          const git = simpleGit(roots.check(projectPath));
           const diff = await git.diff(pathArgs(filePath));
           return diff;
       } catch (e) {
@@ -73,7 +73,7 @@ export function setupGitIPC() {
   // Get File Content at Revision (e.g. HEAD)
   ipcMain.handle('git:getFileAtRevision', async (_, projectPath, filePath, revision = 'HEAD') => {
       try {
-          const git = simpleGit(projectPath);
+          const git = simpleGit(roots.check(projectPath));
           const content = await git.show([`${checkRevision(revision)}:${filePath}`]);
           return content;
       } catch (e) {
@@ -85,7 +85,7 @@ export function setupGitIPC() {
   // Restore (Discard Changes)
   ipcMain.handle('git:restore', async (_, projectPath, filePath) => {
       try {
-          const git = simpleGit(projectPath);
+          const git = simpleGit(roots.check(projectPath));
           await git.checkout(pathArgs(filePath)); // or 'restore' if git version supports it, checkout is safer for older git
           return true;
       } catch (e) {
@@ -96,7 +96,7 @@ export function setupGitIPC() {
 
   // Init
   ipcMain.handle('git:init', async (_, projectPath) => {
-      const git = simpleGit(projectPath);
+      const git = simpleGit(roots.check(projectPath));
       await git.init();
       return true;
   });

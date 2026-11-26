@@ -1,6 +1,7 @@
 import { ipcMain, dialog } from 'electron';
 import fs from 'fs/promises';
 import path from 'path';
+import { checkProjectName } from './roots';
 
 // Helper to scan directory
 async function readDirRecursive(dirPath, rootPath = null) {
@@ -37,19 +38,20 @@ async function readDirRecursive(dirPath, rootPath = null) {
   return children.filter(Boolean);
 }
 
-export function setupIPC() {
+export function setupIPC(roots) {
   // Open Directory Dialog
   ipcMain.handle('dialog:openDirectory', async () => {
     const { canceled, filePaths } = await dialog.showOpenDialog({
       properties: ['openDirectory']
     });
     if (canceled) return null;
-    return filePaths[0]; // Return the path string
+    return roots.allow(filePaths[0]); // Return the path string
   });
 
   // Read Directory (Recursive)
   ipcMain.handle('fs:readDir', async (_, dirPath) => {
     try {
+      dirPath = roots.check(dirPath);
       const children = await readDirRecursive(dirPath);
       // Return as a root node
       return [{
@@ -66,19 +68,19 @@ export function setupIPC() {
 
   // Read File
   ipcMain.handle('fs:readFile', async (_, filePath) => {
-    return await fs.readFile(filePath, 'utf-8');
+    return await fs.readFile(roots.check(filePath), 'utf-8');
   });
 
   // Write File
   ipcMain.handle('fs:writeFile', async (_, filePath, content) => {
-    await fs.writeFile(filePath, content, 'utf-8');
+    await fs.writeFile(roots.check(filePath), content, 'utf-8');
     return true;
   });
 
   // Create Project
   ipcMain.handle('fs:createProject', async (_, { parentPath, projectName, type, author }) => {
     try {
-      const projectPath = path.join(parentPath, projectName);
+      const projectPath = path.join(roots.check(parentPath), checkProjectName(projectName));
       
       // 1. Create Project Root
       await fs.mkdir(projectPath, { recursive: true });
@@ -122,7 +124,7 @@ export function setupIPC() {
         );
       }
 
-      return projectPath;
+      return roots.allow(projectPath);
     } catch (error) {
       console.error('fs:createProject error:', error);
       throw error;

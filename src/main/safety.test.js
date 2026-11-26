@@ -33,4 +33,8 @@ describe('pathArgs', () => {
     expect(pathArgs(['a.md', '-b.md'])).toEqual(['--', 'a.md', '-b.md'])
     expect(pathArgs('.')).toEqual(['--', '.'])
   })
+
+  it.each([undefined, '', [], ['a.md', 3]])('refuses %s', (files) => {
+    expect(() => pathArgs(files)).toThrow('invalid path')
+  })
 })

@@ -5,6 +5,7 @@ import icon from '../../resources/icon.png?asset'
 import { setupIPC } from './ipc' // Register Handlers
 import { setupGitIPC } from './git'
 import { isSafeExternalUrl } from './safety'
+import { createRootStore } from './roots'
 
 function createWindow() {
 // ... existing window creation ...
@@ -53,9 +54,10 @@ app.whenReady().then(() => {
   })
 
   // Setup our File System IPC
-  setupIPC();
+  const roots = createRootStore(join(app.getPath('userData'), 'allowed-roots.json'))
+  setupIPC(roots);
   // Setup Git IPC
-  setupGitIPC();
+  setupGitIPC(roots);
 
   createWindow()
 

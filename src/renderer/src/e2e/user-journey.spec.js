@@ -26,15 +26,35 @@ test.describe('Verso User Journey', () => {
     const seen = await page.evaluate(() => ({
       require: typeof window.require,
       process: typeof window.process,
+      electron: typeof window.electron,
       readFile: typeof window.api?.files?.readFile,
       gitStatus: typeof window.api?.git?.status
     }));
     expect(seen).toEqual({
       require: 'undefined',
       process: 'undefined',
+      electron: 'undefined',
       readFile: 'function',
       gitStatus: 'function'
     });
+
+    const prefs = await electronApp.evaluate(({ BrowserWindow }) => {
+      const p = BrowserWindow.getAllWindows()[0].webContents.getLastWebPreferences();
+      return { sandbox: p.sandbox, contextIsolation: p.contextIsolation, nodeIntegration: p.nodeIntegration };
+    });
+    expect(prefs).toEqual({ sandbox: true, contextIsolation: true, nodeIntegration: false });
+  });
+
+  test('page code cannot read or write files outside an opened folder', async () => {
+    const result = await page.evaluate(async () => {
+      const outcome = async (call) => call.then(() => 'allowed', () => 'refused');
+      return {
+        read: await outcome(window.api.files.readFile('/etc/hosts')),
+        write: await outcome(window.api.files.saveFile('/tmp/verso-e2e-should-not-exist.txt', 'x')),
+        git: await outcome(window.api.git.init('/tmp'))
+      };
+    });
+    expect(result).toEqual({ read: 'refused', write: 'refused', git: 'refused' });
   });
 
   test('can navigate from dashboard to editor and back', async () => {

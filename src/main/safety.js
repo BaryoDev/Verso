@@ -20,5 +20,7 @@ export function checkRevision(revision) {
 
 // Paths go after "--" so git never reads one as an option.
 export function pathArgs(files) {
-  return ['--', ...[].concat(files)]
+  const list = [].concat(files)
+  if (list.length === 0 || list.some((f) => typeof f !== 'string' || f === '')) throw new Error('invalid path')
+  return ['--', ...list]
 }
